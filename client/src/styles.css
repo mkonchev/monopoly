@@ -417,6 +417,7 @@ button {
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  overflow-wrap: anywhere;
 }
 
 .tile .tprice {
@@ -426,10 +427,46 @@ button {
   padding-bottom: 2px;
 }
 
+/* Боковые колонки: цветная полоска занимает 24% ширины. Название читается
+   вертикально на всю высоту клетки, цена — мелко в нижнем внутреннем углу. */
+.tile.side-left .tname {
+  margin-left: 24%;
+}
+
+.tile.side-right .tname {
+  margin-right: 24%;
+}
+
 .tile.side-left .tname,
 .tile.side-right .tname {
-  padding-left: 26%;
-  padding-right: 2px;
+  writing-mode: vertical-rl;
+  padding: 3px 0;
+  font-size: clamp(5px, 0.7vw, 11px);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.tile.side-left .tname {
+  transform: rotate(180deg); /* слева читаем снизу вверх */
+}
+
+.tile.side-left .tprice {
+  position: absolute;
+  bottom: 1px;
+  right: 2px;
+}
+
+.tile.side-right .tprice {
+  position: absolute;
+  bottom: 1px;
+  left: 2px;
+}
+
+.tile.side-left .tprice,
+.tile.side-right .tprice {
+  font-size: clamp(4.5px, 0.55vw, 8px);
+  padding: 0;
+  margin: 0;
 }
 
 .tile.side-corner {

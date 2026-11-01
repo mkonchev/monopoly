@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { GameAction, RoomSnapshot } from '../../../shared/src/types';
 import Board from './Board';
 import CenterPanel from './CenterPanel';
@@ -5,6 +6,7 @@ import Players from './Players';
 import MyProperties from './MyProperties';
 import LogPanel from './LogPanel';
 import CardModal from './CardModal';
+import TileInfo from './TileInfo';
 
 interface Props {
   snap: RoomSnapshot;
@@ -14,6 +16,7 @@ interface Props {
 }
 
 export default function Game({ snap, act, leave }: Props) {
+  const [infoTile, setInfoTile] = useState<number | null>(null);
   return (
     <div className="game">
       <header className="game-header">
@@ -24,16 +27,17 @@ export default function Game({ snap, act, leave }: Props) {
         </button>
       </header>
       <div className="game-body">
-        <Board snap={snap}>
+        <Board snap={snap} onSelectTile={setInfoTile}>
           <CenterPanel snap={snap} act={act} />
         </Board>
         <aside className="side">
           <Players snap={snap} />
-          <MyProperties snap={snap} act={act} />
+          <MyProperties snap={snap} act={act} onSelectTile={setInfoTile} />
           <LogPanel snap={snap} />
         </aside>
       </div>
       <CardModal snap={snap} />
+      {infoTile !== null && <TileInfo idx={infoTile} snap={snap} onClose={() => setInfoTile(null)} />}
     </div>
   );
 }

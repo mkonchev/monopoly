@@ -1,7 +1,7 @@
 import type { GameAction, RoomSnapshot } from '../../../shared/src/types';
 import { fmtMoney } from '../fmt';
 
-export default function MyProperties({ snap, act }: { snap: RoomSnapshot; act: (a: GameAction) => void }) {
+export default function MyProperties({ snap, act, onSelectTile }: { snap: RoomSnapshot; act: (a: GameAction) => void; onSelectTile?: (idx: number) => void }) {
   const { board, state, players } = snap;
   const me = players.find((p) => p.id === snap.you);
   if (!me || me.bankrupt) return null;
@@ -43,14 +43,14 @@ export default function MyProperties({ snap, act }: { snap: RoomSnapshot; act: (
             {board.groups[groupId]?.name ?? groupId}
           </div>
           {list.map(({ i }) => (
-            <PropRow key={i} snap={snap} idx={i} act={act} canBuild={canBuild} canManage={canManage} />
+            <PropRow key={i} snap={snap} idx={i} act={act} canBuild={canBuild} canManage={canManage} onSelectTile={onSelectTile} />
           ))}
         </div>
       ))}
       {singles.length > 0 && (
         <div className="prop-group">
           {singles.map(({ i }) => (
-            <PropRow key={i} snap={snap} idx={i} act={act} canBuild={canBuild} canManage={canManage} />
+            <PropRow key={i} snap={snap} idx={i} act={act} canBuild={canBuild} canManage={canManage} onSelectTile={onSelectTile} />
           ))}
         </div>
       )}
@@ -64,12 +64,14 @@ function PropRow({
   act,
   canBuild,
   canManage,
+  onSelectTile,
 }: {
   snap: RoomSnapshot;
   idx: number;
   act: (a: GameAction) => void;
   canBuild: boolean;
   canManage: boolean;
+  onSelectTile?: (idx: number) => void;
 }) {
   const t = snap.board.tiles[idx];
   const ps = snap.state.properties[idx]!;
@@ -79,7 +81,7 @@ function PropRow({
   const unmortgageCost = Math.round(price * 0.55);
 
   return (
-    <div className={`prop-row${ps.mortgaged ? ' mortgaged' : ''}`}>
+    <div className={`prop-row clickable${ps.mortgaged ? ' mortgaged' : ''}`} onClick={() => onSelectTile?.(idx)}>
       <div className="prop-name">
         {t.name}
         {ps.mortgaged && ' 🏦'}
@@ -87,7 +89,7 @@ function PropRow({
         {t.type === 'street' && ps.houses > 0 && ps.houses < 5 && ` ${'🏠'.repeat(ps.houses)}`}
       </div>
       <div className="prop-price">{fmtMoney(price, cur)}</div>
-      <div className="prop-actions">
+      <div className="prop-actions" onClick={(e) => e.stopPropagation()}>
         {t.type === 'street' && (
           <>
             <button

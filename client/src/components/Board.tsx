@@ -3,18 +3,18 @@ import type { RoomSnapshot } from '../../../shared/src/types';
 import { CORNER_EMOJI, gridPos, sideOf } from '../boardLayout';
 import { fmtCompact, fmtMoney } from '../fmt';
 
-export default function Board({ snap, children }: { snap: RoomSnapshot; children?: ReactNode }) {
+export default function Board({ snap, children, onSelectTile }: { snap: RoomSnapshot; children?: ReactNode; onSelectTile?: (idx: number) => void }) {
   return (
     <div className="board">
       {snap.board.tiles.map((tile, i) => (
-        <Tile key={i} idx={i} snap={snap} />
+        <Tile key={i} idx={i} snap={snap} onSelectTile={onSelectTile} />
       ))}
       <div className="board-center">{children}</div>
     </div>
   );
 }
 
-function Tile({ idx, snap }: { idx: number; snap: RoomSnapshot }) {
+function Tile({ idx, snap, onSelectTile }: { idx: number; snap: RoomSnapshot; onSelectTile?: (idx: number) => void }) {
   const tile = snap.board.tiles[idx];
   const ps = snap.state.properties[idx];
   const side = sideOf(idx);
@@ -31,10 +31,12 @@ function Tile({ idx, snap }: { idx: number; snap: RoomSnapshot }) {
       className={[
         'tile',
         `side-${side}`,
+        price > 0 ? 'clickable' : '',
         owner ? 'owned' : '',
         ps?.mortgaged ? 'mortgaged' : '',
         owner?.id === snap.you ? 'mine' : '',
       ].join(' ')}
+      onClick={price > 0 && onSelectTile ? () => onSelectTile(idx) : undefined}
       style={{
         gridRow: pos.row,
         gridColumn: pos.col,

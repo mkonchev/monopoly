@@ -136,9 +136,12 @@ describe('кредит в банке', () => {
     turn(room, 1);
     expect(p.loan!.debt).toBe(Math.round(1000000 * 1.15 * 1.15));
     expect(p.loan!.turnsServed).toBe(2);
-    turn(room, 0);
-    turn(room, 1);
-    expect(p.loan!.turnsServed).toBe(3);
+    let guard = 0;
+    while (!p.loan!.due && guard++ < 60) {
+      turn(room, 0);
+      turn(room, 1);
+    }
+    expect(p.loan!.turnsServed).toBe(10); // termTurns из конфига
     expect(p.loan!.due).toBe(true);
   });
 
@@ -246,6 +249,7 @@ describe('спасение долга', () => {
     const debtor = room.players[0];
     const rescuer = room.players[2];
     act(room, 0, { type: 'takeLoan', amount: 500000 });
+    rescuer.money = 10000000; // за 10 ходов под 15% долг вырастает примерно вчетверо
     dueCycle(room, 0, (r) => act(r, 2, { type: 'rescueLoan', target: 'p0' }));
     const debt = debtor.loan!.debt;
     expect(debt).toBeGreaterThan(500000);

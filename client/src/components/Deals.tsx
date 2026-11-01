@@ -14,7 +14,7 @@ export function loanCfgOf(snap: RoomSnapshot) {
     snap.board.rules.loans ?? {
       bankRate: 0.15,
       playerRate: 0.1,
-      termTurns: 3,
+      termTurns: 10,
       extendRateFactor: 1.5,
       maxExtensions: 2,
       maxPrincipal: snap.board.rules.startMoney,

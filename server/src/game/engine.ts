@@ -61,7 +61,7 @@ function fmtMoney(room: GameRoom, n: number): string {
 const DEFAULT_LOANS: Required<LoanRules> = {
   bankRate: 0.15,
   playerRate: 0.1,
-  termTurns: 3,
+  termTurns: 10,
   extendRateFactor: 1.5,
   maxExtensions: 2,
   maxPrincipal: 0, // заполняется в loanCfg из startMoney

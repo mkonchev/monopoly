@@ -59,8 +59,8 @@ function fmtMoney(room: GameRoom, n: number): string {
 // ---------- Кредиты ----------
 
 const DEFAULT_LOANS: Required<LoanRules> = {
-  bankRate: 0.15,
-  playerRate: 0.1,
+  bankRate: 0.1,
+  playerRate: 0.05,
   termTurns: 10,
   extendRateFactor: 1.5,
   maxExtensions: 2,

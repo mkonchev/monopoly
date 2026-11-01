@@ -12,8 +12,8 @@ type ModalKind = null | 'bank-loan' | 'player-loan' | 'trade';
 export function loanCfgOf(snap: RoomSnapshot) {
   return (
     snap.board.rules.loans ?? {
-      bankRate: 0.15,
-      playerRate: 0.1,
+      bankRate: 0.1,
+      playerRate: 0.05,
       termTurns: 10,
       extendRateFactor: 1.5,
       maxExtensions: 2,

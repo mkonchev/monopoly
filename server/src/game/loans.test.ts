@@ -130,11 +130,11 @@ describe('кредит в банке', () => {
     act(room, 0, { type: 'takeLoan', amount: 1000000 });
     turn(room, 0); // завершает 1-й ход
     turn(room, 1);
-    expect(p.loan!.debt).toBe(1150000); // начисление в начале 2-го хода
+    expect(p.loan!.debt).toBe(1100000); // начисление в начале 2-го хода (ставка банка 10%)
     expect(p.loan!.turnsServed).toBe(1);
     turn(room, 0);
     turn(room, 1);
-    expect(p.loan!.debt).toBe(Math.round(1000000 * 1.15 * 1.15));
+    expect(p.loan!.debt).toBe(Math.round(1000000 * 1.1 * 1.1));
     expect(p.loan!.turnsServed).toBe(2);
     let guard = 0;
     while (!p.loan!.due && guard++ < 60) {
@@ -171,7 +171,7 @@ describe('продление и изъятие', () => {
     dueCycle(room, 0, () => act(room, 0, { type: 'extendLoan' }));
     expect(p.loan!.due).toBe(false);
     expect(p.loan!.turnsServed).toBe(0);
-    expect(p.loan!.rate).toBeCloseTo(0.225, 5);
+    expect(p.loan!.rate).toBeCloseTo(0.15, 5); // 0.10 × 1.5
     expect(p.loan!.extensions).toBe(1);
   });
 
@@ -222,7 +222,7 @@ describe('займ между игроками', () => {
     expect(room.players[2].money).toBe(board.rules.startMoney - 250000);
     expect(room.players[0].money).toBe(board.rules.startMoney + 250000);
     expect(room.players[0].loan!.creditor).toBe('p2');
-    expect(room.players[0].loan!.rate).toBeCloseTo(0.1, 5);
+    expect(room.players[0].loan!.rate).toBeCloseTo(0.05, 5);
     expect(room.state.offers.loanRequests).toHaveLength(0);
   });
 

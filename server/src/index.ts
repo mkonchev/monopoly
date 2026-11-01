@@ -54,6 +54,7 @@ function snapshot(room: GameRoom, you: string | null): RoomSnapshot {
       connected: p.socketIds.size > 0,
       isHost: p.isHost,
       netWorth: p.bankrupt ? 0 : netWorth(room, p),
+      loan: p.loan,
     })),
   };
 }

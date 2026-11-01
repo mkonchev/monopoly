@@ -63,11 +63,71 @@ export interface BoardConfig {
     jailFine: number;
     housesLimit: number | null;
     hotelsLimit: number | null;
+    loans?: LoanRules;
   };
   groups: Record<string, { name: string; color: string }>;
   tiles: Tile[];
   chance: CardDef[];
   chest: CardDef[];
+}
+
+export interface LoanRules {
+  bankRate: number; // ставка банка за ход должника (0.15 = 15%)
+  playerRate: number; // ставка займа между игроками
+  termTurns: number; // срок кредита в ходах должника
+  extendRateFactor: number; // продление: ставка умножается на это
+  maxExtensions: number;
+  maxPrincipal: number; // максимальная сумма тела кредита
+  rescueSharePercent: number; // доля ренты спасателю (50 = половина)
+}
+
+// Активный кредит игрока.
+export interface LoanState {
+  creditor: 'bank' | string; // банк или id игрока-кредитора
+  principal: number;
+  debt: number; // текущий долг с процентами
+  rate: number;
+  turnsServed: number;
+  termTurns: number;
+  extensions: number;
+  due: boolean; // срок вышел — нужно платить/продлевать, иначе в конце хода изъятие
+  rescued: boolean; // долг погашен спасателем: он же кредитор и получает долю ренты
+}
+
+export interface TradeOffer {
+  id: string;
+  from: string;
+  to: string;
+  giveTiles: number[];
+  giveMoney: number;
+  wantTiles: number[];
+  wantMoney: number;
+}
+
+export interface LoanRequest {
+  id: string;
+  from: string; // заёмщик
+  to: string; // потенциальный кредитор
+  amount: number;
+}
+
+export interface GameState {
+  phase: Phase;
+  turnPlayer: string | null;
+  turnNumber: number;
+  dice: [number, number] | null;
+  rollId: number;
+  doublesCount: number;
+  pendingExtraRoll: boolean;
+  properties: Record<number, PropertyState>;
+  debt: DebtInfo | null;
+  lastCard: LastCard | null;
+  cardSeq: number;
+  winner: string | null;
+  log: LogEntry[];
+  logSeq: number;
+  bank: { houses: number | null; hotels: number | null };
+  offers: { trades: TradeOffer[]; loanRequests: LoanRequest[] };
 }
 
 // ---------- Состояние игры (то, что видит клиент) ----------
@@ -87,6 +147,7 @@ export interface PublicPlayer {
   connected: boolean;
   isHost: boolean;
   netWorth: number;
+  loan: LoanState | null;
 }
 
 export interface PropertyState {
@@ -115,24 +176,6 @@ export interface DebtInfo {
   recipients?: string[]; // для moneyToEach
 }
 
-export interface GameState {
-  phase: Phase;
-  turnPlayer: string | null;
-  turnNumber: number;
-  dice: [number, number] | null;
-  rollId: number;
-  doublesCount: number;
-  pendingExtraRoll: boolean;
-  properties: Record<number, PropertyState>;
-  debt: DebtInfo | null;
-  lastCard: LastCard | null;
-  cardSeq: number;
-  winner: string | null;
-  log: LogEntry[];
-  logSeq: number;
-  bank: { houses: number | null; hotels: number | null };
-}
-
 export interface RoomSnapshot {
   code: string;
   board: BoardConfig;
@@ -157,4 +200,18 @@ export type GameAction =
   | { type: 'mortgage'; tile: number }
   | { type: 'unmortgage'; tile: number }
   | { type: 'payDebt' }
-  | { type: 'declareBankrupt' };
+  | { type: 'declareBankrupt' }
+  // кредиты
+  | { type: 'takeLoan'; amount: number }
+  | { type: 'requestLoanFrom'; to: string; amount: number }
+  | { type: 'acceptLoanRequest'; id: string }
+  | { type: 'declineLoanRequest'; id: string }
+  | { type: 'repayLoan' }
+  | { type: 'extendLoan' }
+  | { type: 'defaultLoan' }
+  | { type: 'rescueLoan'; target: string }
+  // обмен
+  | { type: 'proposeTrade'; to: string; giveTiles: number[]; giveMoney: number; wantTiles: number[]; wantMoney: number }
+  | { type: 'acceptTrade'; id: string }
+  | { type: 'declineTrade'; id: string }
+  | { type: 'cancelOffer'; kind: 'trade' | 'loan'; id: string };

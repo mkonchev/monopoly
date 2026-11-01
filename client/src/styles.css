@@ -889,6 +889,134 @@ button {
   gap: 5px;
 }
 
+/* ---------- Кредиты и обмен ---------- */
+
+.loan-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  padding: 8px;
+  border-radius: 8px;
+  background: #f8f6ef;
+}
+
+.loan-block.due {
+  background: #fdecea;
+  outline: 2px solid var(--danger);
+}
+
+.due-warning {
+  color: var(--danger);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.center-warning {
+  background: #fdecea;
+  border: 1.5px solid var(--danger);
+  border-radius: 8px;
+  padding: 8px 12px;
+  max-width: 90%;
+}
+
+.offer-block {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.offer-block.rescue {
+  background: #fff8e1;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.offer-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #666;
+}
+
+.offer-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+  font-size: 12.5px;
+  background: #f6f6f6;
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+
+.offer-row > span:first-child {
+  min-width: 0;
+}
+
+.offer-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.loan-badge {
+  font-size: 11px;
+  color: #a5641a;
+  font-weight: 600;
+}
+
+.loan-badge.due {
+  color: var(--danger);
+}
+
+.trade-modal {
+  max-width: 560px;
+}
+
+.trade-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.checkbox-list {
+  max-height: 180px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 10px;
+  font-size: 13.5px;
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 6px;
+}
+
+.check-row:hover {
+  background: #f1eee4;
+}
+
+.field select {
+  padding: 8px 10px;
+  border: 1.5px solid #ccc;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+@media (max-width: 900px) {
+  .trade-cols {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ---------- Тост ---------- */
 
 .toast {

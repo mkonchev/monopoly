@@ -102,6 +102,11 @@ export default function CenterPanel({ snap, act }: { snap: RoomSnapshot; act: (a
         </div>
       )}
       <div className="status">{status}</div>
+      {me?.loan?.due && state.phase !== 'over' && (
+        <div className="due-warning center-warning">
+          ⚠ Кредит просрочен! Погасите, продлите или сдайтесь в панели «Кредиты и обмен» — иначе в конце хода кредитор заберёт всё
+        </div>
+      )}
       {controls}
     </div>
   );

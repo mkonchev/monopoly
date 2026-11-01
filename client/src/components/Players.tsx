@@ -33,6 +33,11 @@ export default function Players({ snap }: { snap: RoomSnapshot }) {
             </div>
             <div className="player-money">
               <div>{fmtMoney(p.money, board.meta.currency)}</div>
+              {p.loan && (
+                <div className={`loan-badge${p.loan.due ? ' due' : ''}`}>
+                  🏦 долг {fmtMoney(p.loan.debt, board.meta.currency)}{p.loan.due ? ' ⚠' : ''}
+                </div>
+              )}
               <div className="player-worth">имущество: {fmtMoney(p.netWorth, board.meta.currency)}</div>
             </div>
           </li>

@@ -93,6 +93,7 @@ export class RoomManager {
       bankrupt: false,
       isHost,
       socketIds: new Set(),
+      loan: null,
     };
     room.players.push(player);
     return player;

@@ -8,7 +8,16 @@
     "goSalary": 200000,
     "jailFine": 50000,
     "housesLimit": 32,
-    "hotelsLimit": 12
+    "hotelsLimit": 12,
+    "loans": {
+      "bankRate": 0.15,
+      "playerRate": 0.1,
+      "termTurns": 3,
+      "extendRateFactor": 1.5,
+      "maxExtensions": 2,
+      "maxPrincipal": 1500000,
+      "rescueSharePercent": 50
+    }
   },
   "groups": {
     "brown": { "name": "Коричневая", "color": "#955436" },

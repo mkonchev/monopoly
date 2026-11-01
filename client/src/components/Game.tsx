@@ -7,6 +7,7 @@ import MyProperties from './MyProperties';
 import LogPanel from './LogPanel';
 import CardModal from './CardModal';
 import TileInfo from './TileInfo';
+import Deals from './Deals';
 
 interface Props {
   snap: RoomSnapshot;
@@ -32,6 +33,7 @@ export default function Game({ snap, act, leave }: Props) {
         </Board>
         <aside className="side">
           <Players snap={snap} />
+          <Deals snap={snap} act={act} />
           <MyProperties snap={snap} act={act} onSelectTile={setInfoTile} />
           <LogPanel snap={snap} />
         </aside>

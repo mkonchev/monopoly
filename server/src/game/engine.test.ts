@@ -100,7 +100,7 @@ describe('покупка и рента', () => {
 
   it('монополия удваивает базовую ренту', () => {
     const room = makeRoom(2);
-    give(room, 1, 'Житная улица', 'Нагатинская улица');
+    give(room, 1, 'хата на Дежнева', 'Нагатинская улица');
     room.players[0].position = 0;
     roll(room, 0, 1, 2);
     expect(room.players[0].money).toBe(board.rules.startMoney - 8000);
@@ -109,7 +109,7 @@ describe('покупка и рента', () => {
   it('рента растёт с домами по таблице', () => {
     const room = makeRoom(2);
     const idx = tileIdx(room, 'Нагатинская улица');
-    give(room, 1, 'Житная улица', 'Нагатинская улица');
+    give(room, 1, 'хата на Дежнева', 'Нагатинская улица');
     room.state.properties[idx]!.houses = 3;
     room.players[0].position = 0;
     roll(room, 0, 1, 2);
@@ -295,8 +295,8 @@ describe('карточки', () => {
 
   it('repairs: платит за дома', () => {
     const room = makeRoom(2);
-    const idx = tileIdx(room, 'Житная улица');
-    give(room, 0, 'Житная улица', 'Нагатинская улица');
+    const idx = tileIdx(room, 'хата на Дежнева');
+    give(room, 0, 'хата на Дежнева', 'Нагатинская улица');
     room.state.properties[idx]!.houses = 2;
     room.decks!.chance = [{ text: 'Ремонт', effect: { type: 'repairs', perHouse: 50000, perHotel: 200000 } }];
     room.players[0].position = 0;
@@ -330,8 +330,8 @@ describe('карточки', () => {
 describe('дома и залоги', () => {
   it('равномерная застройка: нельзя опережать группу', () => {
     const room = makeRoom(2);
-    give(room, 0, 'Житная улица', 'Нагатинская улица');
-    const a = tileIdx(room, 'Житная улица');
+    give(room, 0, 'хата на Дежнева', 'Нагатинская улица');
+    const a = tileIdx(room, 'хата на Дежнева');
     const b = tileIdx(room, 'Нагатинская улица');
     act(room, 0, { type: 'build', tile: a });
     expect(room.state.properties[a]!.houses).toBe(1);
@@ -346,8 +346,8 @@ describe('дома и залоги', () => {
 
   it('строить можно только при полной немортгазированной группе', () => {
     const room = makeRoom(2);
-    const a = tileIdx(room, 'Житная улица');
-    give(room, 0, 'Житная улица');
+    const a = tileIdx(room, 'хата на Дежнева');
+    give(room, 0, 'хата на Дежнева');
     expect(() => act(room, 0, { type: 'build', tile: a })).toThrow(GameError);
     give(room, 0, 'Нагатинская улица');
     room.state.properties[a]!.mortgaged = true;
@@ -356,8 +356,8 @@ describe('дома и залоги', () => {
 
   it('залог даёт половину цены, выкуп — 55%', () => {
     const room = makeRoom(2);
-    const a = tileIdx(room, 'Житная улица');
-    give(room, 0, 'Житная улица', 'Нагатинская улица');
+    const a = tileIdx(room, 'хата на Дежнева');
+    give(room, 0, 'хата на Дежнева', 'Нагатинская улица');
     const before = room.players[0].money;
     act(room, 0, { type: 'mortgage', tile: a });
     expect(room.players[0].money).toBe(before + 30000);
@@ -388,7 +388,7 @@ describe('банкротство и победа', () => {
   it('банкротство кредитору передаёт собственность, игра продолжается', () => {
     const room = makeRoom(3);
     const p = room.players[0];
-    give(room, 0, 'Житная улица', 'Нагатинская улица');
+    give(room, 0, 'хата на Дежнева', 'Нагатинская улица');
     const idx = tileIdx(room, 'Арбатская площадь');
     room.state.properties[idx]!.owner = room.players[1].id;
     room.state.properties[idx]!.houses = 5;
@@ -397,7 +397,7 @@ describe('банкротство и победа', () => {
     roll(room, 0, 1, 1);
     act(room, 0, { type: 'declareBankrupt' });
     expect(p.bankrupt).toBe(true);
-    expect(room.state.properties[tileIdx(room, 'Житная улица')]!.owner).toBe('p1');
+    expect(room.state.properties[tileIdx(room, 'хата на Дежнева')]!.owner).toBe('p1');
     expect(room.state.properties[idx]!.owner).toBe('p1');
     expect(room.state.phase).toBe('roll');
     expect(room.state.turnPlayer).toBe('p1');
@@ -410,12 +410,12 @@ describe('банкротство и победа', () => {
     room.state.properties[idx]!.owner = room.players[1].id;
     room.state.properties[idx]!.houses = 5;
     const p = room.players[0];
-    give(room, 0, 'Житная улица');
+    give(room, 0, 'хата на Дежнева');
     p.position = 37;
     p.money = 100000;
     roll(room, 0, 1, 1);
     expect(room.state.phase).toBe('debt');
-    act(room, 0, { type: 'mortgage', tile: tileIdx(room, 'Житная улица') });
+    act(room, 0, { type: 'mortgage', tile: tileIdx(room, 'хата на Дежнева') });
     expect(p.money).toBe(130000);
     expect(() => act(room, 0, { type: 'payDebt' })).toThrow(GameError);
     act(room, 0, { type: 'declareBankrupt' });

@@ -1297,9 +1297,6 @@ export function applyAction(room: GameRoom, p: Player, action: GameAction): void
       return;
     }
   }
-
-  // Бросок завершён (включая движение): событие ментов тикает или появляется.
-  if (action.type === 'roll') tickCops(room);
 }
 
 function requireActivePlayer(room: GameRoom, p: Player): void {

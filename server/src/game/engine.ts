@@ -186,6 +186,9 @@ export function createLobbyState(): GameState {
     awaitingOffer: null,
     cops: null,
     copsFinePending: false,
+    casinoPot: 0,
+    lastCasinoRoll: null,
+    casinoSeq: 0,
     speedDie: false,
     speedFace: null,
     pendingMrMonopoly: false,
@@ -214,6 +217,9 @@ export function startGame(room: GameRoom): void {
     awaitingOffer: null,
     cops: null,
     copsFinePending: false,
+    casinoPot: 0,
+    lastCasinoRoll: null,
+    casinoSeq: 0,
     speedDie: room.state.speedDie === true,
     speedFace: null,
     pendingMrMonopoly: false,
@@ -454,6 +460,10 @@ function resolveTile(room: GameRoom, p: Player, depth: number): void {
       sendToJail(room, p);
       s.phase = 'manage';
       return;
+    case 'casino':
+      log(s, `🎰 ${p.name} в казино! Банк: ${fmtMoney(room, s.casinoPot)} — ставка на числа и крутим`);
+      s.phase = 'casino';
+      return;
     default:
       if (tile.type === 'go' && p.position === 0) log(s, `${p.name} точно на СТАРТЕ`);
       finishResolution(room);
@@ -506,6 +516,8 @@ function enterDebt(room: GameRoom, p: Player, amount: number, creditor: string |
 function payBank(room: GameRoom, p: Player, amount: number, reason: string): 'paid' | 'debt' {
   if (p.money >= amount) {
     p.money -= amount;
+    // Все выплаты в банк пополняют казино: налоги, штрафы ментов, карты, залог тюрьмы.
+    room.state.casinoPot += amount;
     return 'paid';
   }
   enterDebt(room, p, amount, 'bank', reason);
@@ -915,6 +927,7 @@ export function applyAction(room: GameRoom, p: Player, action: GameAction): void
       if (!p.inJail) throw new GameError('Вы не в тюрьме');
       if (p.money < room.board.rules.jailFine) throw new GameError('Не хватает денег на залог');
       p.money -= room.board.rules.jailFine;
+      s.casinoPot += room.board.rules.jailFine; // залог тюрьмы тоже уходит в казино
       p.inJail = false;
       p.jailTurns = 0;
       log(s, `${p.name} платит залог ${fmtMoney(room, room.board.rules.jailFine)} и выходит из тюрьмы`);
@@ -1215,6 +1228,28 @@ export function applyAction(room: GameRoom, p: Player, action: GameAction): void
       if (!FIGURES.some((f) => f.id === action.figure)) throw new GameError('Неизвестная фигурка');
       if (room.players.some((q) => q.id !== p.id && q.figure === action.figure)) throw new GameError('Эту фигурку уже выбрали');
       p.figure = action.figure;
+      return;
+    }
+
+    case 'casinoBet': {
+      if (!isCurrent(room, p)) throw new GameError('Сейчас не ваш ход');
+      if (s.phase !== 'casino') throw new GameError('Сейчас не фаза казино');
+      const nums = [...new Set(action.numbers)];
+      if (nums.length === 0 || nums.some((n) => !Number.isInteger(n) || n < 1 || n > 6)) {
+        throw new GameError('Ставка — числа от 1 до 6');
+      }
+      const roll = d6();
+      const hit = nums.includes(roll);
+      const payout = hit ? Math.floor(s.casinoPot / nums.length) : 0;
+      s.casinoPot -= payout;
+      p.money += payout;
+      s.lastCasinoRoll = { seq: ++s.casinoSeq, player: p.id, roll, payout };
+      if (hit) {
+        log(s, `🎰 Казино: выпало ${roll} — ${p.name} забирает ${fmtMoney(room, payout)} (ставка на ${nums.length} чисел)`);
+      } else {
+        log(s, `🎰 Казино: выпало ${roll} — ${p.name} мимо (ставил на ${nums.join(', ')})`);
+      }
+      finishResolution(room);
       return;
     }
 

@@ -56,7 +56,7 @@
     { "type": "chest", "name": "Казна" },
     { "type": "street", "name": "Грузинский Вал", "group": "orange", "price": 180000, "houseCost": 100000, "rent": [14000, 70000, 200000, 550000, 750000, 950000] },
     { "type": "street", "name": "Первая Парковая", "group": "orange", "price": 200000, "houseCost": 100000, "rent": [16000, 80000, 220000, 600000, 800000, 1000000] },
-    { "type": "free-parking", "name": "Бесплатная стоянка" },
+    { "type": "casino", "name": "Казино" },
     { "type": "street", "name": "Арбат", "group": "red", "price": 220000, "houseCost": 150000, "rent": [18000, 90000, 250000, 700000, 875000, 1050000] },
     { "type": "chance", "name": "Шанс" },
     { "type": "street", "name": "Кутузовский проспект", "group": "red", "price": 220000, "houseCost": 150000, "rent": [18000, 90000, 250000, 700000, 875000, 1050000] },

@@ -78,6 +78,11 @@ function Tile({ idx, snap, onSelectTile, onPickTile }: { idx: number; snap: Room
         </>
       )}
       {ps?.mortgaged && <span className="mort-badge">🏦</span>}
+      {idx === 10 && snap.state.casinoPot > 0 && (
+        <span className="pot-chip" title="Банк казино">
+          🎰 {fmtCompact(snap.state.casinoPot)}
+        </span>
+      )}
       {tile.type === 'chance' && <span className="tile-emoji">❓</span>}
       {tile.type === 'chest' && <span className="tile-emoji">🎁</span>}
       {snap.state.cops?.tiles.includes(idx) && (

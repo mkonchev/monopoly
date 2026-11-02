@@ -15,4 +15,4 @@ export function sideOf(i: number): Side {
   return 'right';
 }
 
-export const CORNER_EMOJI: Record<number, string> = { 0: '🏁', 10: '🚔', 20: '🅿️', 30: '👮' };
+export const CORNER_EMOJI: Record<number, string> = { 0: '🏁', 10: '🚔', 20: '🎰', 30: '👮' };

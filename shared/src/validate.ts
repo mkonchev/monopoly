@@ -1,7 +1,7 @@
 import type { BoardConfig, CardEffect, Tile } from './types';
 
 const TILE_TYPES: Tile['type'][] = [
-  'go', 'jail', 'free-parking', 'go-to-jail', 'chance', 'chest', 'tax', 'street', 'railroad', 'utility',
+  'go', 'jail', 'free-parking', 'casino', 'go-to-jail', 'chance', 'chest', 'tax', 'street', 'railroad', 'utility',
 ];
 
 // Возвращает список ошибок конфига; пустой список = конфиг корректен.

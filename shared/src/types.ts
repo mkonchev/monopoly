@@ -49,7 +49,7 @@ export interface TaxTile {
 }
 
 export interface SimpleTile {
-  type: 'go' | 'jail' | 'free-parking' | 'go-to-jail' | 'chance' | 'chest';
+  type: 'go' | 'jail' | 'free-parking' | 'casino' | 'go-to-jail' | 'chance' | 'chest';
   name: string;
 }
 
@@ -133,6 +133,10 @@ export interface GameState {
   // Событие «Сыковские менты»: клетки с мигалками и остаток бросков
   cops: { tiles: number[]; rollsLeft: number } | null;
   copsFinePending: boolean; // игрок приехал на клетку — штраф спишется при завершении разрешения
+  // Казино (бывшая бесплатная стоянка): банк из всех штрафов и выплат банку
+  casinoPot: number;
+  lastCasinoRoll: { seq: number; player: string; roll: number; payout: number } | null;
+  casinoSeq: number;
   // Быстрый режим (скоростной кубик)
   speedDie: boolean;
   speedFace: SpeedFace | null;
@@ -141,7 +145,7 @@ export interface GameState {
 
 // ---------- Состояние игры (то, что видит клиент) ----------
 
-export type Phase = 'lobby' | 'roll' | 'buy' | 'debt' | 'manage' | 'over' | 'bus' | 'triplet';
+export type Phase = 'lobby' | 'roll' | 'buy' | 'debt' | 'manage' | 'over' | 'bus' | 'triplet' | 'casino';
 
 // Грань скоростного кубика (быстрый режим).
 export type SpeedFace = '1' | '2' | '3' | 'bus' | 'm1';
@@ -249,4 +253,6 @@ export type GameAction =
   | { type: 'busMove'; choice: 'sum' | 'd1' | 'd2' }
   | { type: 'tripletMove'; tile: number }
   // фигурка
-  | { type: 'setFigure'; figure: string };
+  | { type: 'setFigure'; figure: string }
+  // казино
+  | { type: 'casinoBet'; numbers: number[] };

@@ -766,6 +766,52 @@ button {
   }
 }
 
+/* ---------- Казино ---------- */
+
+.casino-modal {
+  max-width: 420px;
+}
+
+.casino-numbers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.casino-num {
+  font-size: 26px;
+  font-weight: 800;
+  padding: 12px 0;
+  border: 2px solid #ccc;
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.casino-num.on {
+  border-color: #7b1fa2;
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.pot-chip {
+  position: absolute;
+  top: 4%;
+  left: 8%;
+  right: 8%;
+  background: #7b1fa2;
+  color: #ffd54f;
+  border-radius: 8px;
+  font-size: clamp(6px, 0.85vw, 12px);
+  font-weight: 800;
+  padding: 2px 0;
+  text-align: center;
+  z-index: 6;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
 /* ---------- Боковая панель ---------- */
 
 .side {

@@ -9,6 +9,7 @@ import CardModal from './CardModal';
 import TileInfo from './TileInfo';
 import Deals from './Deals';
 import AllProperties from './AllProperties';
+import CasinoModal from './CasinoModal';
 
 interface Props {
   snap: RoomSnapshot;
@@ -45,6 +46,7 @@ export default function Game({ snap, act, leave }: Props) {
         </aside>
       </div>
       <CardModal snap={snap} />
+      <CasinoModal snap={snap} act={act} />
       {infoTile !== null && <TileInfo idx={infoTile} snap={snap} onClose={() => setInfoTile(null)} />}
     </div>
   );

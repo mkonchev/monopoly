@@ -118,9 +118,11 @@ export default function CenterPanel({ snap, act }: { snap: RoomSnapshot; act: (a
         ? ' — выбирает перемещение автобуса'
         : state.phase === 'triplet'
           ? ' — выбирает клетку для триплета'
-          : state.phase === 'buy' || state.phase === 'debt'
-            ? ' — принимает решение…'
-            : '';
+          : state.phase === 'casino'
+            ? ' — играет в казино'
+            : state.phase === 'buy' || state.phase === 'debt'
+              ? ' — принимает решение…'
+              : '';
     status = `Ход: ${turn.name}${turn.inJail ? ' (в тюрьме)' : ''}${waiting}`;
   } else {
     status = 'Ожидание…';

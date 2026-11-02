@@ -172,3 +172,62 @@ describe('событие «Сыковские менты»', () => {
     expect(room.players[0].money).toBe(board.rules.startMoney - 100000);
   });
 });
+
+describe('регрессия: ход после выплаты долга', () => {
+  it('штраф ментов: залог + payDebt возобновляют ход (не зависает в debt)', () => {
+    const room = makeRoom(2);
+    room.state.cops = { tiles: [24], rollsLeft: 10 };
+    const p = room.players[0];
+    p.money = 10000;
+    p.position = 19;
+    const idx = tileIdx(room, 'Тестовая улица');
+    room.state.properties[idx]!.owner = 'p0';
+    rollCops(room, 0, 2, 3, 0.9); // 24 мигалка → долг 50000
+    expect(room.state.phase).toBe('debt');
+    act(room, 0, { type: 'mortgage', tile: idx }); // +30000
+    p.money = 100000; // донесли до суммы штрафа
+    act(room, 0, { type: 'payDebt' });
+    expect(room.state.phase).toBe('manage');
+    expect(room.state.debt).toBeNull();
+    act(room, 0, { type: 'endTurn' }); // ход завершился — игра жива
+    expect(room.state.turnPlayer).toBe('p1');
+  });
+
+  it('долг рентой: выплата возобновляет ход (дубль сохраняется)', () => {
+    const room = makeRoom(2);
+    const idx = tileIdx(room, 'Тестовая улица');
+    room.state.properties[idx]!.owner = 'p1';
+    room.state.properties[idx]!.houses = 5;
+    const p = room.players[0];
+    p.money = 100000;
+    p.position = idx - 2;
+    const r = (v: number) => (v - 1) / 6 + 0.08;
+    vi.spyOn(Math, 'random').mockReturnValueOnce(r(1)).mockReturnValueOnce(r(1)); // дубль, сумма 2
+    act(room, 0, { type: 'roll' });
+    vi.restoreAllMocks();
+    expect(room.state.phase).toBe('debt');
+    expect(room.state.debt?.creditor).toBe('p1');
+    p.money = 5000000;
+    act(room, 0, { type: 'payDebt' });
+    expect(room.state.phase).toBe('roll'); // дубль — доп. бросок
+    expect(room.state.debt).toBeNull();
+    rollCops(room, 0, 1, 2, 0.9);
+    expect(room.state.phase).toBe('manage');
+  });
+
+  it('залог тюрьмы из долга: после выплаты происходит ход по броску', () => {
+    const room = makeRoom(2);
+    const p = room.players[0];
+    p.position = 10;
+    p.inJail = true;
+    p.jailTurns = 2;
+    p.money = 10000;
+    rollCops(room, 0, 1, 2, 0.9); // третья неудача → залог → долг
+    expect(room.state.phase).toBe('debt');
+    expect(room.state.debt?.reason).toBe('jail-fine');
+    p.money = 100000;
+    act(room, 0, { type: 'payDebt' });
+    expect(p.position).toBe(13); // ход по сумме броска произошёл
+    expect(room.state.phase).toBe('manage');
+  });
+});

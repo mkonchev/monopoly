@@ -974,6 +974,7 @@ export function applyAction(room: GameRoom, p: Player, action: GameAction): void
       }
       log(s, `${p.name} выплачивает долг ${fmtMoney(room, total)}`);
       s.debt = null;
+      s.phase = 'manage'; // сброс фазы долга — иначе finishResolution ничего не сделает и ход зависнет
       if (debt.reason === 'jail-fine') moveAndResolve(room, p, (s.dice?.[0] ?? 1) + (s.dice?.[1] ?? 1));
       else finishResolution(room);
       return;

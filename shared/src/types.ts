@@ -64,6 +64,7 @@ export interface BoardConfig {
     housesLimit: number | null;
     hotelsLimit: number | null;
     loans?: LoanRules;
+    cops?: CopsRules;
   };
   groups: Record<string, { name: string; color: string }>;
   tiles: Tile[];
@@ -129,6 +130,9 @@ export interface GameState {
   bank: { houses: number | null; hotels: number | null };
   offers: { trades: TradeOffer[]; loanRequests: LoanRequest[] };
   awaitingOffer: AwaitingOffer | null;
+  // Событие «Сыковские менты»: клетки с мигалками и остаток бросков
+  cops: { tiles: number[]; rollsLeft: number } | null;
+  copsFinePending: boolean; // игрок приехал на клетку — штраф спишется при завершении разрешения
   // Быстрый режим (скоростной кубик)
   speedDie: boolean;
   speedFace: SpeedFace | null;
@@ -148,6 +152,14 @@ export interface AwaitingOffer {
   id: string;
   from: string;
   to: string;
+}
+
+// Случайное событие «Сыковские менты».
+export interface CopsRules {
+  chance: number; // шанс появления на каждом броске (0.05 = 5%)
+  fine: number; // штраф за попадание на клетку с ментами
+  rolls: number; // сколько бросков (всех игроков) патрулируют
+  tiles: number; // сколько клеток с мигалками
 }
 
 export interface PublicPlayer {

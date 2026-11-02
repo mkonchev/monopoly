@@ -724,6 +724,48 @@ button {
   background: #eaf5ea;
 }
 
+/* ---------- Событие «Сыковские менты» ---------- */
+
+.cops-banner {
+  background: #fdecea;
+  border: 1.5px solid var(--danger);
+  color: var(--danger);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  max-width: 90%;
+  animation: copspulse 1.2s infinite;
+}
+
+@keyframes copspulse {
+  50% {
+    background: #ffe1de;
+  }
+}
+
+.cops-badge {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(12px, 1.8vw, 24px);
+  z-index: 5;
+  pointer-events: none;
+  animation: copblink 0.9s infinite;
+}
+
+@keyframes copblink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
 /* ---------- Боковая панель ---------- */
 
 .side {

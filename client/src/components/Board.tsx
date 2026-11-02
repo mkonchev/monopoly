@@ -80,6 +80,11 @@ function Tile({ idx, snap, onSelectTile, onPickTile }: { idx: number; snap: Room
       {ps?.mortgaged && <span className="mort-badge">🏦</span>}
       {tile.type === 'chance' && <span className="tile-emoji">❓</span>}
       {tile.type === 'chest' && <span className="tile-emoji">🎁</span>}
+      {snap.state.cops?.tiles.includes(idx) && (
+        <span className="cops-badge" title="Сыковские менты! Приедешь — штраф">
+          🚨
+        </span>
+      )}
       {tokens.length > 0 && (
         <div className="tokens">
           {tokens.map((t) => (

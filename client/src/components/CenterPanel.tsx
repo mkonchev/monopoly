@@ -147,6 +147,12 @@ export default function CenterPanel({ snap, act }: { snap: RoomSnapshot; act: (a
         </div>
       )}
       <div className="status">{status}</div>
+      {state.cops && (
+        <div className="cops-banner">
+          🚨 Сыковские менты патрулируют улицы! Осталось бросков: {state.cops.rollsLeft} · штраф{' '}
+          {fmtMoney(snap.board.rules.cops?.fine ?? 50000, cur)}
+        </div>
+      )}
       {me?.loan?.due && state.phase !== 'over' && (
         <div className="due-warning center-warning">
           ⚠ Кредит просрочен! Погасите, продлите или сдайтесь в панели «Кредиты и обмен» — иначе в конце хода кредитор заберёт всё

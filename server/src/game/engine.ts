@@ -184,6 +184,8 @@ export function createLobbyState(): GameState {
     bank: { houses: null, hotels: null },
     offers: { trades: [], loanRequests: [] },
     awaitingOffer: null,
+    cops: null,
+    copsFinePending: false,
     speedDie: false,
     speedFace: null,
     pendingMrMonopoly: false,
@@ -210,6 +212,8 @@ export function startGame(room: GameRoom): void {
     bank: { houses: b.rules.housesLimit, hotels: b.rules.hotelsLimit },
     offers: { trades: [], loanRequests: [] },
     awaitingOffer: null,
+    cops: null,
+    copsFinePending: false,
     speedDie: room.state.speedDie === true,
     speedFace: null,
     pendingMrMonopoly: false,
@@ -292,6 +296,17 @@ function finishResolution(room: GameRoom): void {
     s.phase = 'manage';
     s.pendingMrMonopoly = false;
     return;
+  }
+  // Штраф ментов: клетка разрешена — платим, если приехали именно на мигалку.
+  if (s.copsFinePending) {
+    const cfg = copsCfg(room);
+    const onCopTile = !!s.cops && s.cops.tiles.includes(p.position);
+    s.copsFinePending = false;
+    if (onCopTile) {
+      log(s, `🚨 ${p.name} попал(а) на ментов — штраф ${fmtMoney(room, cfg.fine)}`);
+      const r = payBank(room, p, cfg.fine, 'cops');
+      if (r === 'debt') return; // payDebt вернёт сюда через finishResolution
+    }
   }
   // Отложенный Мистер Монополия: обычные кубики разрешились — теперь его ход.
   if (s.pendingMrMonopoly && (s.phase === 'roll' || s.phase === 'manage' || s.phase === 'bus' || s.phase === 'triplet')) {
@@ -377,6 +392,7 @@ function doMrMonopoly(room: GameRoom, p: Player): void {
 
 function resolveTile(room: GameRoom, p: Player, depth: number): void {
   const s = room.state;
+  s.copsFinePending = true; // приехали на клетку — штраф ментов спишется при завершении
   const tile = tileOf(room, p.position);
   switch (tile.type) {
     case 'street':
@@ -758,6 +774,83 @@ function findTileByName(room: GameRoom, name: string): number | null {
 
 // ---------- Действия игроков ----------
 
+function doRoll(room: GameRoom, p: Player): void {
+  const s = room.state;
+    const d1 = d6();
+    const d2 = d6();
+    s.dice = [d1, d2];
+    s.rollId++;
+    const sum = d1 + d2;
+
+    if (p.inJail) {
+      // В тюрьме скоростной кубик не бросается
+      s.speedFace = null;
+      log(s, `🎲 ${p.name} бросает: ${d1} + ${d2} = ${sum}`);
+      if (d1 === d2) {
+        log(s, `${p.name} выбрасывает дубль и выходит из тюрьмы!`);
+        p.inJail = false;
+        p.jailTurns = 0;
+        moveAndResolve(room, p, sum);
+      } else {
+        p.jailTurns++;
+        if (p.jailTurns >= 3) {
+          log(s, `${p.name} третья неудача — платит залог ${fmtMoney(room, room.board.rules.jailFine)} и идёт по сумме броска`);
+          p.inJail = false;
+          const r = payBank(room, p, room.board.rules.jailFine, 'jail-fine');
+          if (r === 'paid') moveAndResolve(room, p, sum);
+        } else {
+          log(s, `${p.name} не выбрасывает дубль — остаётся в тюрьме (${p.jailTurns}/3)`);
+          s.phase = 'manage';
+        }
+      }
+      return;
+    }
+
+    // Скоростной кубик быстрого режима
+    const face = s.speedDie ? speedFace() : null;
+    s.speedFace = face;
+    const speedNum = face === '1' || face === '2' || face === '3' ? Number(face) : 0;
+    const faceLabel = face === 'bus' ? 'автобус 🚌' : face === 'm1' ? 'Мистер Монополия 🎩' : face;
+    log(s, `🎲 ${p.name} бросает: ${d1} + ${d2}${face ? ` + ${faceLabel}` : ''}${speedNum ? ` = ${d1 + d2 + speedNum}` : ` = ${sum}`}`);
+
+    // Триплет: оба обычных кубика равны скоростному — перемещение на любое поле и новый бросок
+    if (face && speedNum > 0 && d1 === d2 && d1 === speedNum) {
+      log(s, `🎰 ТРИПЛЕТ! ${p.name} выбирает любую клетку на доске`);
+      s.pendingExtraRoll = true;
+      s.phase = 'triplet';
+      return;
+    }
+
+    if (face === 'bus') {
+      log(s, `🚌 Автобус! ${p.name} выбирает: пройти сумму (${sum}) или только один кубик (${d1} или ${d2})`);
+      s.phase = 'bus';
+      return;
+    }
+
+    const total = sum + speedNum;
+    if (d1 === d2) {
+      s.doublesCount++;
+      if (s.doublesCount >= 3) {
+        log(s, `Третий дубль подряд — за мошенничество ${p.name} идёт в тюрьму!`);
+        sendToJail(room, p);
+        s.phase = 'manage';
+        return;
+      }
+      s.pendingExtraRoll = true;
+      log(s, `Дубль! ${p.name} ходит ещё раз`);
+      moveAndResolve(room, p, total);
+    } else {
+      s.doublesCount = 0;
+      s.pendingExtraRoll = false;
+      moveAndResolve(room, p, total);
+    }
+    if (face === 'm1') {
+      if (s.phase === 'roll' || s.phase === 'manage') doMrMonopoly(room, p);
+      else s.pendingMrMonopoly = true; // ждёт разрешения покупки/долга на обычных кубиках
+    }
+
+}
+
 export function applyAction(room: GameRoom, p: Player, action: GameAction): void {
   room.lastActivity = Date.now();
   const s = room.state;
@@ -780,78 +873,8 @@ export function applyAction(room: GameRoom, p: Player, action: GameAction): void
     case 'roll': {
       if (!isCurrent(room, p)) throw new GameError('Сейчас не ваш ход');
       if (s.phase !== 'roll') throw new GameError('Сейчас нельзя бросать кубики');
-      const d1 = d6();
-      const d2 = d6();
-      s.dice = [d1, d2];
-      s.rollId++;
-      const sum = d1 + d2;
-
-      if (p.inJail) {
-        // В тюрьме скоростной кубик не бросается
-        s.speedFace = null;
-        log(s, `🎲 ${p.name} бросает: ${d1} + ${d2} = ${sum}`);
-        if (d1 === d2) {
-          log(s, `${p.name} выбрасывает дубль и выходит из тюрьмы!`);
-          p.inJail = false;
-          p.jailTurns = 0;
-          moveAndResolve(room, p, sum);
-        } else {
-          p.jailTurns++;
-          if (p.jailTurns >= 3) {
-            log(s, `${p.name} третья неудача — платит залог ${fmtMoney(room, room.board.rules.jailFine)} и идёт по сумме броска`);
-            p.inJail = false;
-            const r = payBank(room, p, room.board.rules.jailFine, 'jail-fine');
-            if (r === 'paid') moveAndResolve(room, p, sum);
-          } else {
-            log(s, `${p.name} не выбрасывает дубль — остаётся в тюрьме (${p.jailTurns}/3)`);
-            s.phase = 'manage';
-          }
-        }
-        return;
-      }
-
-      // Скоростной кубик быстрого режима
-      const face = s.speedDie ? speedFace() : null;
-      s.speedFace = face;
-      const speedNum = face === '1' || face === '2' || face === '3' ? Number(face) : 0;
-      const faceLabel = face === 'bus' ? 'автобус 🚌' : face === 'm1' ? 'Мистер Монополия 🎩' : face;
-      log(s, `🎲 ${p.name} бросает: ${d1} + ${d2}${face ? ` + ${faceLabel}` : ''}${speedNum ? ` = ${d1 + d2 + speedNum}` : ` = ${sum}`}`);
-
-      // Триплет: оба обычных кубика равны скоростному — перемещение на любое поле и новый бросок
-      if (face && speedNum > 0 && d1 === d2 && d1 === speedNum) {
-        log(s, `🎰 ТРИПЛЕТ! ${p.name} выбирает любую клетку на доске`);
-        s.pendingExtraRoll = true;
-        s.phase = 'triplet';
-        return;
-      }
-
-      if (face === 'bus') {
-        log(s, `🚌 Автобус! ${p.name} выбирает: пройти сумму (${sum}) или только один кубик (${d1} или ${d2})`);
-        s.phase = 'bus';
-        return;
-      }
-
-      const total = sum + speedNum;
-      if (d1 === d2) {
-        s.doublesCount++;
-        if (s.doublesCount >= 3) {
-          log(s, `Третий дубль подряд — за мошенничество ${p.name} идёт в тюрьму!`);
-          sendToJail(room, p);
-          s.phase = 'manage';
-          return;
-        }
-        s.pendingExtraRoll = true;
-        log(s, `Дубль! ${p.name} ходит ещё раз`);
-        moveAndResolve(room, p, total);
-      } else {
-        s.doublesCount = 0;
-        s.pendingExtraRoll = false;
-        moveAndResolve(room, p, total);
-      }
-      if (face === 'm1') {
-        if (s.phase === 'roll' || s.phase === 'manage') doMrMonopoly(room, p);
-        else s.pendingMrMonopoly = true; // ждёт разрешения покупки/долга на обычных кубиках
-      }
+      doRoll(room, p);
+      tickCops(room);
       return;
     }
     case 'buy': {
@@ -1238,6 +1261,9 @@ export function applyAction(room: GameRoom, p: Player, action: GameAction): void
       return;
     }
   }
+
+  // Бросок завершён (включая движение): событие ментов тикает или появляется.
+  if (action.type === 'roll') tickCops(room);
 }
 
 function requireActivePlayer(room: GameRoom, p: Player): void {
@@ -1255,6 +1281,41 @@ function requireOwnTurn(room: GameRoom, p: Player): void {
 // Пока предложение обмена/займа висит без ответа — ход предложившего приостановлен.
 function requireNoAwaiting(room: GameRoom): void {
   if (room.state.awaitingOffer) throw new GameError('Дождитесь ответа на ваше предложение');
+}
+
+// ---------- Случайное событие «Сыковские менты» ----------
+
+function copsCfg(room: GameRoom): Required<NonNullable<BoardConfig['rules']['cops']>> {
+  const raw = room.board.rules.cops ?? {};
+  return {
+    chance: raw.chance ?? 0.05,
+    fine: raw.fine ?? 50000,
+    rolls: raw.rolls ?? 10,
+    tiles: raw.tiles ?? 6,
+  };
+}
+
+// Вызывается после каждого броска: событие тикает или появляется с шансом.
+function tickCops(room: GameRoom): void {
+  const s = room.state;
+  if (s.phase === 'over') return;
+  if (s.cops) {
+    s.cops.rollsLeft--;
+    if (s.cops.rollsLeft <= 0) {
+      log(s, '🚨 Менты уехали, улицы снова спокойны');
+      s.cops = null;
+    }
+    return;
+  }
+  const cfg = copsCfg(room);
+  if (Math.random() < cfg.chance) {
+    const tiles = shuffle(room.board.tiles.map((_, i) => i)).slice(0, cfg.tiles);
+    s.cops = { tiles, rollsLeft: cfg.rolls };
+    log(
+      s,
+      `🚨 СЫКОВСКИЕ МЕНТЫ ПРИЕХАЛИ! Мигалки на ${cfg.tiles} случайных клетках — попадёшь: штраф ${fmtMoney(room, cfg.fine)}. Патрулируют ${cfg.rolls} бросков (у всех игроков)`,
+    );
+  }
 }
 
 // Обмен: улицы без построек; вокзалы/предприятия — всегда.

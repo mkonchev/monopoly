@@ -17,6 +17,12 @@
       "maxExtensions": 2,
       "maxPrincipal": 1500000,
       "rescueSharePercent": 50
+    },
+    "cops": {
+      "chance": 0.05,
+      "fine": 50000,
+      "rolls": 10,
+      "tiles": 6
     }
   },
   "groups": {

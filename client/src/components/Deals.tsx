@@ -28,6 +28,8 @@ export default function Deals({ snap, act }: Props) {
   const me = snap.players.find((p) => p.id === snap.you);
   if (!me || me.bankrupt || snap.state.phase === 'over') return null;
   const cur = snap.board.meta.currency;
+  const myTurn = snap.you === snap.state.turnPlayer;
+  const turnHint = !myTurn && <div className="hint">⏳ Кредиты, обмены и спасение — только в свой ход</div>;
 
   const nameOf = (id: string) => snap.players.find((p) => p.id === id)?.name ?? '???';
   const incomingTrades = snap.state.offers.trades.filter((t) => t.to === me.id);
@@ -41,13 +43,13 @@ export default function Deals({ snap, act }: Props) {
       <h3>Кредиты и обмен</h3>
 
       {me.loan ? (
-        <LoanBlock snap={snap} act={act} />
+        <LoanBlock snap={snap} act={act} myTurn={myTurn} />
       ) : (
         <div className="btn-row">
-          <button className="btn secondary" onClick={() => setModal('bank-loan')}>
+          <button className="btn secondary" disabled={!myTurn} onClick={() => setModal('bank-loan')}>
             🏦 Кредит в банке
           </button>
-          <button className="btn secondary" onClick={() => setModal('player-loan')}>
+          <button className="btn secondary" disabled={!myTurn} onClick={() => setModal('player-loan')}>
             🤝 Занять у игрока
           </button>
         </div>
@@ -56,16 +58,17 @@ export default function Deals({ snap, act }: Props) {
       {(incomingTrades.length > 0 || incomingLoans.length > 0) && (
         <div className="offer-block">
           <div className="offer-title">Входящие предложения</div>
+          {turnHint}
           {incomingLoans.map((r) => (
             <div key={r.id} className="offer-row">
               <span>
                 🤲 <b>{nameOf(r.from)}</b> просит в долг {fmtMoney(r.amount, cur)}
               </span>
               <span className="offer-actions">
-                <button className="mini-btn" onClick={() => act({ type: 'acceptLoanRequest', id: r.id })}>
+                <button className="mini-btn" disabled={!myTurn} onClick={() => act({ type: 'acceptLoanRequest', id: r.id })}>
                   Дать
                 </button>
-                <button className="mini-btn" onClick={() => act({ type: 'declineLoanRequest', id: r.id })}>
+                <button className="mini-btn" disabled={!myTurn} onClick={() => act({ type: 'declineLoanRequest', id: r.id })}>
                   Отказать
                 </button>
               </span>
@@ -79,10 +82,10 @@ export default function Deals({ snap, act }: Props) {
                 {t.wantMoney > 0 && ` + ${fmtMoney(t.wantMoney, cur)}`}
               </span>
               <span className="offer-actions">
-                <button className="mini-btn" onClick={() => act({ type: 'acceptTrade', id: t.id })}>
+                <button className="mini-btn" disabled={!myTurn} onClick={() => act({ type: 'acceptTrade', id: t.id })}>
                   Принять
                 </button>
-                <button className="mini-btn" onClick={() => act({ type: 'declineTrade', id: t.id })}>
+                <button className="mini-btn" disabled={!myTurn} onClick={() => act({ type: 'declineTrade', id: t.id })}>
                   Отказать
                 </button>
               </span>
@@ -94,6 +97,7 @@ export default function Deals({ snap, act }: Props) {
       {rescueable.length > 0 && (
         <div className="offer-block rescue">
           <div className="offer-title">Просроченные кредиты — можно спасти</div>
+          {turnHint}
           {rescueable.map((p) => (
             <div key={p.id} className="offer-row">
               <span>
@@ -101,7 +105,7 @@ export default function Deals({ snap, act }: Props) {
               </span>
               <button
                 className="mini-btn"
-                disabled={me.money < p.loan!.debt}
+                disabled={!myTurn || me.money < p.loan!.debt}
                 title="Погасить его долг; он будет должен вам, а вы получаете половину ренты с его улиц до выплаты"
                 onClick={() => act({ type: 'rescueLoan', target: p.id })}
               >
@@ -120,7 +124,7 @@ export default function Deals({ snap, act }: Props) {
               <span>
                 🤲 К {nameOf(r.to)}: просите {fmtMoney(r.amount, cur)}
               </span>
-              <button className="mini-btn" onClick={() => act({ type: 'cancelOffer', kind: 'loan', id: r.id })}>
+              <button className="mini-btn" disabled={!myTurn} onClick={() => act({ type: 'cancelOffer', kind: 'loan', id: r.id })}>
                 Отменить
               </button>
             </div>
@@ -132,7 +136,7 @@ export default function Deals({ snap, act }: Props) {
                 {t.giveMoney > 0 && ` + ${fmtMoney(t.giveMoney, cur)}`} ↔ {describeTiles(snap, t.wantTiles)}
                 {t.wantMoney > 0 && ` + ${fmtMoney(t.wantMoney, cur)}`}
               </span>
-              <button className="mini-btn" onClick={() => act({ type: 'cancelOffer', kind: 'trade', id: t.id })}>
+              <button className="mini-btn" disabled={!myTurn} onClick={() => act({ type: 'cancelOffer', kind: 'trade', id: t.id })}>
                 Отменить
               </button>
             </div>
@@ -141,7 +145,7 @@ export default function Deals({ snap, act }: Props) {
       )}
 
       <div className="btn-row">
-        <button className="btn secondary" onClick={() => setModal('trade')}>
+        <button className="btn secondary" disabled={!myTurn} onClick={() => setModal('trade')}>
           🔄 Предложить обмен
         </button>
       </div>
@@ -162,7 +166,7 @@ function describeTiles(snap: RoomSnapshot, tiles: number[]): string {
   return tiles.map((i) => snap.board.tiles[i]?.name ?? '?').join(', ');
 }
 
-function LoanBlock({ snap, act }: { snap: RoomSnapshot; act: (a: GameAction) => void }) {
+function LoanBlock({ snap, act, myTurn }: { snap: RoomSnapshot; act: (a: GameAction) => void; myTurn: boolean }) {
   const me = snap.players.find((p) => p.id === snap.you)!;
   const l = me.loan!;
   const cfg = loanCfgOf(snap);
@@ -170,7 +174,11 @@ function LoanBlock({ snap, act }: { snap: RoomSnapshot; act: (a: GameAction) => 
   const left = Math.max(0, l.termTurns - l.turnsServed);
   return (
     <div className={`loan-block${l.due ? ' due' : ''}`}>
-      {l.due && <div className="due-warning">⚠ Просрочено! Если закончить ход — {nameOfLoanCreditor(snap, l.creditor)} заберёт всё имущество и деньги</div>}
+      {l.due && (
+        <div className="due-warning">
+          ⚠ Просрочено! Погасите или продлите в свой ход — иначе в начале вашего следующего хода {nameOfLoanCreditor(snap, l.creditor)} заберёт всё имущество и деньги
+        </div>
+      )}
       <div>
         Долг: <b>{fmtMoney(l.debt, cur)}</b> · ставка {Math.round(l.rate * 100)}% за ход
         {l.creditor !== 'bank' && ` · кредитор: ${nameOfLoanCreditor(snap, l.creditor)}`}
@@ -178,20 +186,24 @@ function LoanBlock({ snap, act }: { snap: RoomSnapshot; act: (a: GameAction) => 
       </div>
       {!l.due && <div>Осталось ходов: {left}</div>}
       <div className="btn-row">
-        <button className="btn primary" disabled={me.money < l.debt} onClick={() => act({ type: 'repayLoan' })}>
+        <button className="btn primary" disabled={!myTurn || me.money < l.debt} onClick={() => act({ type: 'repayLoan' })}>
           💰 Погасить {fmtMoney(l.debt, cur)}
         </button>
         {l.due && (
           <button
             className="btn secondary"
-            disabled={l.extensions >= cfg.maxExtensions}
+            disabled={!myTurn || l.extensions >= cfg.maxExtensions}
             title={`Ставка станет ${Math.round(l.rate * cfg.extendRateFactor * 100)}%`}
             onClick={() => act({ type: 'extendLoan' })}
           >
             📈 Продлить ({l.extensions}/{cfg.maxExtensions})
           </button>
         )}
-        <button className="btn danger" onClick={() => { if (window.confirm('Отдать всё имущество и деньги кредитору?')) act({ type: 'defaultLoan' }); }}>
+        <button
+          className="btn danger"
+          disabled={!myTurn}
+          onClick={() => { if (window.confirm('Отдать всё имущество и деньги кредитору?')) act({ type: 'defaultLoan' }); }}
+        >
           🏳 Сдаться
         </button>
       </div>

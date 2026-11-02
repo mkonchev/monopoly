@@ -89,7 +89,7 @@ function turn(room: GameRoom, i: number, mid?: (room: GameRoom) => void): void {
 }
 
 // Крутим ходы по кругу; когда у заёмщика наступает просрочка (ставится в начале
-// его хода), onDue вызывается перед endTurn — иначе изъятие.
+// его хода), onDue вызывается перед endTurn — иначе изъятие в начале его следующего хода.
 function dueCycle(room: GameRoom, borrowerIdx: number, onDue: (room: GameRoom) => void): void {
   let guard = 0;
   while (guard++ < 300) {
@@ -105,6 +105,23 @@ function dueCycle(room: GameRoom, borrowerIdx: number, onDue: (room: GameRoom) =
     const b = room.players[borrowerIdx];
     if (b.bankrupt || !b.loan) return; // изъятие
     if (fired && !b.loan.due) return; // урегулировано в mid
+  }
+}
+
+// Спасение в ход спасателя: окно — чужие ходы между просрочкой должника и началом его следующего хода.
+function rescueOnTurn(room: GameRoom, borrowerIdx: number, rescuerIdx: number): void {
+  let guard = 0;
+  while (guard++ < 300) {
+    const currentIdx = room.players.findIndex((p) => p.id === room.state.turnPlayer);
+    if (currentIdx < 0) return;
+    const b = room.players[borrowerIdx];
+    if (b.bankrupt || !b.loan) throw new Error('должника изъяли до спасения');
+    if (currentIdx === rescuerIdx && b.loan.due) {
+      act(room, rescuerIdx, { type: 'rescueLoan', target: `p${borrowerIdx}` });
+      turn(room, rescuerIdx); // завершить ход спасателя
+      return;
+    }
+    turn(room, currentIdx);
   }
 }
 
@@ -186,7 +203,7 @@ describe('продление и изъятие', () => {
     };
     dueCycle(room, 0, extend);
     dueCycle(room, 0, extend);
-    dueCycle(room, 0, () => {}); // продлений нет → в конце хода изъятие
+    dueCycle(room, 0, () => {}); // продлений нет → изъятие в начале следующего хода должника
     expect(p.bankrupt).toBe(true);
     expect(p.loan).toBeNull();
     expect(room.state.properties[idx]!.owner).toBeNull();
@@ -201,6 +218,7 @@ describe('продление и изъятие', () => {
     const idx = tileIdx(room, 'Тестовая улица');
     room.state.properties[idx]!.owner = 'p0';
     act(room, 0, { type: 'requestLoanFrom', to: 'p1', amount: 300000 });
+    turn(room, 0); // ход переходит к p1
     act(room, 1, { type: 'acceptLoanRequest', id: room.state.offers.loanRequests[0]!.id });
     expect(p.loan!.creditor).toBe('p1');
     const creditorBefore = creditor.money;
@@ -218,6 +236,8 @@ describe('займ между игроками', () => {
     const room = makeRoom(3);
     act(room, 0, { type: 'requestLoanFrom', to: 'p2', amount: 250000 });
     expect(room.state.offers.loanRequests).toHaveLength(1);
+    turn(room, 0);
+    turn(room, 1); // ход переходит к p2
     act(room, 2, { type: 'acceptLoanRequest', id: room.state.offers.loanRequests[0]!.id });
     expect(room.players[2].money).toBe(board.rules.startMoney - 250000);
     expect(room.players[0].money).toBe(board.rules.startMoney + 250000);
@@ -229,9 +249,21 @@ describe('займ между игроками', () => {
   it('отказ убирает заявку', () => {
     const room = makeRoom(2);
     act(room, 0, { type: 'requestLoanFrom', to: 'p1', amount: 100000 });
+    turn(room, 0); // ход переходит к p1
     act(room, 1, { type: 'declineLoanRequest', id: room.state.offers.loanRequests[0]!.id });
     expect(room.state.offers.loanRequests).toHaveLength(0);
     expect(room.players[0].loan).toBeNull();
+  });
+
+  it('вне своего хода кредиты и обмены запрещены', () => {
+    const room = makeRoom(2);
+    expect(() => act(room, 1, { type: 'takeLoan', amount: 100000 })).toThrow(GameError);
+    expect(() => act(room, 1, { type: 'proposeTrade', to: 'p0', giveTiles: [], giveMoney: 1000, wantTiles: [], wantMoney: 0 })).toThrow(GameError);
+    act(room, 0, { type: 'takeLoan', amount: 100000 });
+    turn(room, 0); // ход p1
+    expect(() => act(room, 0, { type: 'repayLoan' })).toThrow(GameError);
+    act(room, 1, { type: 'takeLoan', amount: 100000 }); // в свой ход можно
+    expect(room.players[1].loan?.creditor).toBe('bank');
   });
 
   it('новый займ недоступен, пока есть кредит', () => {
@@ -249,8 +281,8 @@ describe('спасение долга', () => {
     const debtor = room.players[0];
     const rescuer = room.players[2];
     act(room, 0, { type: 'takeLoan', amount: 500000 });
-    rescuer.money = 10000000; // за 10 ходов под 15% долг вырастает примерно вчетверо
-    dueCycle(room, 0, (r) => act(r, 2, { type: 'rescueLoan', target: 'p0' }));
+    rescuer.money = 10000000; // за 10 ходов под 10% долг заметно растёт
+    rescueOnTurn(room, 0, 2); // спасение в ход p2, пока окно не закрылось
     const debt = debtor.loan!.debt;
     expect(debt).toBeGreaterThan(500000);
     expect(debtor.loan!.creditor).toBe('p2');
@@ -265,7 +297,8 @@ describe('спасение долга', () => {
     const rescuer = room.players[2];
     room.state.properties[tileIdx(room, 'Тестовая улица')]!.owner = 'p0';
     act(room, 0, { type: 'takeLoan', amount: 100000 });
-    dueCycle(room, 0, (r) => act(r, 2, { type: 'rescueLoan', target: 'p0' }));
+    rescueOnTurn(room, 0, 2);
+    turn(room, 0); // после спасателя ход у p0 — прокручиваем до p1
     const rescuerBefore = rescuer.money;
     const debtorBefore = debtor.money;
     // игрок 1 попадает на Тестовую улицу. База 4000, но улица одна в своей группе —
@@ -282,10 +315,22 @@ describe('спасение долга', () => {
   it('просроченный долг нельзя спасти без денег', () => {
     const room = makeRoom(3);
     act(room, 0, { type: 'takeLoan', amount: 1000000 });
-    dueCycle(room, 0, (r) => {
-      room.players[2].money = 0;
-      expect(() => act(r, 2, { type: 'rescueLoan', target: 'p0' })).toThrow(GameError);
-    });
+    let rescuedAttempted = false;
+    let guard = 0;
+    while (!rescuedAttempted && guard++ < 300) {
+      const currentIdx = room.players.findIndex((p) => p.id === room.state.turnPlayer);
+      if (currentIdx < 0) break;
+      const b = room.players[0];
+      if (b.bankrupt) break;
+      if (currentIdx === 2 && b.loan?.due) {
+        room.players[2].money = 0;
+        expect(() => act(room, 2, { type: 'rescueLoan', target: 'p0' })).toThrow(GameError);
+        rescuedAttempted = true;
+        break;
+      }
+      turn(room, currentIdx);
+    }
+    expect(rescuedAttempted).toBe(true);
   });
 });
 
@@ -326,6 +371,7 @@ describe('обмен собственностью', () => {
     act(room, 0, { type: 'proposeTrade', to: 'p1', giveTiles: [a], giveMoney: 50000, wantTiles: [b], wantMoney: 0 });
     const money0 = room.players[0].money;
     const money1 = room.players[1].money;
+    turn(room, 0); // ход переходит к p1 — принимает в свой ход
     act(room, 1, { type: 'acceptTrade', id: room.state.offers.trades[0]!.id });
     expect(room.state.properties[a]!.owner).toBe('p1');
     expect(room.state.properties[b]!.owner).toBe('p0');
@@ -350,6 +396,7 @@ describe('обмен собственностью', () => {
     room.state.properties[a]!.owner = 'p0';
     act(room, 0, { type: 'proposeTrade', to: 'p1', giveTiles: [a], giveMoney: 100000, wantTiles: [], wantMoney: 4000 });
     room.players[0].money = 0;
+    turn(room, 0); // ход p1
     expect(() => act(room, 1, { type: 'acceptTrade', id: room.state.offers.trades[0]!.id })).toThrow(GameError);
   });
 
@@ -363,6 +410,7 @@ describe('обмен собственностью', () => {
     act(room, 0, { type: 'cancelOffer', kind: 'trade', id: room.state.offers.trades[0]!.id });
     expect(room.state.offers.trades).toHaveLength(0);
     act(room, 0, { type: 'proposeTrade', to: 'p1', giveTiles: [a], giveMoney: 0, wantTiles: [b], wantMoney: 0 });
+    turn(room, 0); // ход p1
     act(room, 1, { type: 'declineTrade', id: room.state.offers.trades[0]!.id });
     expect(room.state.offers.trades).toHaveLength(0);
   });

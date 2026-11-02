@@ -12,6 +12,10 @@ export const FIGURES: FigureDef[] = [
   { id: 'hamster', name: 'Джунгарик', emoji: '🐹' },
   { id: 'elephant', name: 'Слон', emoji: '🐘' },
   { id: 'cap', name: 'Кепка', emoji: '🧢' },
+  { id: 'rocket', name: 'Ракета', emoji: '🚀' },
+  { id: 'beer', name: 'Пиво', emoji: '🍺' },
+  { id: 'spider', name: 'Паук', emoji: '🕷️' },
+  { id: 'devil', name: 'Дьявол', emoji: '😈' },
 ];
 
 export function figureById(id: string | null | undefined): FigureDef | null {

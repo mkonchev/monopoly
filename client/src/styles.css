@@ -224,9 +224,9 @@ button {
 
 .board {
   display: grid;
-  /* Клетки-улицы прямоугольные 1:1.5, углы квадратные — как на бумажной доске */
-  grid-template-rows: 1fr repeat(9, 1.5fr) 1fr;
-  grid-template-columns: 1fr repeat(9, 1.5fr) 1fr;
+  /* Классическая доска: улицы 1 по краю × 1.5 вглубь, углы 1.5×1.5 */
+  grid-template-rows: 1.5fr repeat(9, 1fr) 1.5fr;
+  grid-template-columns: 1.5fr repeat(9, 1fr) 1.5fr;
   aspect-ratio: 1;
   width: min(100%, calc(100vh - 12px));
   max-height: 100%;
@@ -455,10 +455,10 @@ button {
 .tname {
   position: relative;
   flex: 1;
-  font-size: clamp(5.5px, 0.85vw, 11.5px);
+  font-size: clamp(4.5px, 0.62vw, 10px);
   font-weight: 600;
   line-height: 1.15;
-  padding: 2px 3px;
+  padding: 2px 2px;
   text-align: center;
   display: flex;
   align-items: center;
@@ -580,13 +580,13 @@ button {
 }
 
 .token {
-  width: clamp(9px, 1.45vw, 18px);
-  height: clamp(9px, 1.45vw, 18px);
+  width: clamp(17px, 2.8vw, 34px);
+  height: clamp(17px, 2.8vw, 34px);
   border-radius: 50%;
-  border: 1.5px solid #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
   color: #fff;
-  font-size: clamp(5px, 0.8vw, 10px);
+  font-size: clamp(11px, 1.7vw, 21px);
   font-weight: 800;
   display: flex;
   align-items: center;
@@ -689,12 +689,12 @@ button {
 /* ---------- Фигурки ---------- */
 
 .fig {
-  font-size: 15px;
+  font-size: 20px;
 }
 
 .figure-picker {
   display: flex;
-  gap: 2px;
+  gap: 3px;
   margin-left: auto;
   flex-wrap: wrap;
 }
@@ -703,8 +703,8 @@ button {
   border: 1px solid #ddd;
   background: #fff;
   border-radius: 6px;
-  font-size: 15px;
-  padding: 2px 4px;
+  font-size: 20px;
+  padding: 2px 5px;
   cursor: pointer;
   line-height: 1.2;
 }

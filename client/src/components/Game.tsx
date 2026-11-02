@@ -21,13 +21,6 @@ export default function Game({ snap, act, leave }: Props) {
   const pickMode = snap.state.phase === 'triplet' && snap.you === snap.state.turnPlayer;
   return (
     <div className="game">
-      <header className="game-header">
-        <span className="game-title">🎩 {snap.board.meta.title}</span>
-        <span className="room-badge">{snap.code}</span>
-        <button className="link-btn" onClick={leave}>
-          Выйти
-        </button>
-      </header>
       <div className="game-body">
         <Board
           snap={snap}
@@ -37,6 +30,12 @@ export default function Game({ snap, act, leave }: Props) {
           <CenterPanel snap={snap} act={act} />
         </Board>
         <aside className="side">
+          <div className="side-meta">
+            <span className="room-badge">{snap.code}</span>
+            <button className="link-btn" onClick={leave}>
+              Выйти
+            </button>
+          </div>
           <Players snap={snap} />
           <Deals snap={snap} act={act} />
           <MyProperties snap={snap} act={act} onSelectTile={setInfoTile} />

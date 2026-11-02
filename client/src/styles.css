@@ -211,37 +211,14 @@ button {
 /* ---------- Игровой экран ---------- */
 
 .game {
-  display: flex;
-  flex-direction: column;
   height: 100vh;
-  padding: 8px;
-  gap: 8px;
-}
-
-.game-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.game-title {
-  font-weight: 700;
-  font-size: 18px;
-}
-
-.room-badge {
-  background: #333c4d;
-  padding: 4px 12px;
-  border-radius: 20px;
-  letter-spacing: 3px;
-  font-weight: 700;
-  margin-left: auto;
+  padding: 6px;
 }
 
 .game-body {
-  flex: 1;
+  height: 100%;
   display: flex;
-  gap: 8px;
+  gap: 6px;
   min-height: 0;
 }
 
@@ -250,7 +227,7 @@ button {
   grid-template-rows: repeat(11, 1fr);
   grid-template-columns: repeat(11, 1fr);
   aspect-ratio: 1;
-  height: min(100%, calc(100vw - 360px));
+  width: min(100%, calc(100vh - 12px));
   max-height: 100%;
   margin: 0 auto;
   background: var(--paper);
@@ -277,6 +254,15 @@ button {
   gap: 14px;
   padding: 16px;
   text-align: center;
+}
+
+.room-badge {
+  background: #333c4d;
+  color: #fff;
+  padding: 4px 12px;
+  border-radius: 20px;
+  letter-spacing: 3px;
+  font-weight: 700;
 }
 
 .center-title {
@@ -411,6 +397,7 @@ button {
 }
 
 .tile .bar {
+  position: relative;
   height: 24%;
   min-height: 8px;
   display: flex;
@@ -418,6 +405,16 @@ button {
   justify-content: center;
   gap: 6%;
   border-bottom: 0.5px solid #999;
+}
+
+.corner-face {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
 }
 
 .tile.side-top .bar {
@@ -455,8 +452,9 @@ button {
 }
 
 .tname {
+  position: relative;
   flex: 1;
-  font-size: clamp(5px, 0.75vw, 10px);
+  font-size: clamp(5.5px, 0.85vw, 11.5px);
   font-weight: 600;
   line-height: 1.15;
   padding: 2px 3px;
@@ -469,7 +467,8 @@ button {
 }
 
 .tile .tprice {
-  font-size: clamp(5px, 0.65vw, 9px);
+  position: relative;
+  font-size: clamp(5px, 0.72vw, 10px);
   color: #555;
   text-align: center;
   padding-bottom: 2px;
@@ -489,7 +488,7 @@ button {
 .tile.side-right .tname {
   writing-mode: vertical-rl;
   padding: 3px 0;
-  font-size: clamp(5px, 0.7vw, 11px);
+  font-size: clamp(5.5px, 0.78vw, 12.5px);
   letter-spacing: -0.02em;
   line-height: 1.25;
 }
@@ -521,17 +520,8 @@ button {
   background: #efe9d8;
 }
 
-.corner-face {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-}
-
 .corner-emoji {
-  font-size: clamp(10px, 1.6vw, 22px);
+  font-size: clamp(11px, 1.8vw, 26px);
 }
 
 .tile-emoji {
@@ -589,13 +579,13 @@ button {
 }
 
 .token {
-  width: clamp(8px, 1.3vw, 16px);
-  height: clamp(8px, 1.3vw, 16px);
+  width: clamp(9px, 1.45vw, 18px);
+  height: clamp(9px, 1.45vw, 18px);
   border-radius: 50%;
   border: 1.5px solid #fff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
   color: #fff;
-  font-size: clamp(5px, 0.7vw, 9px);
+  font-size: clamp(5px, 0.8vw, 10px);
   font-weight: 800;
   display: flex;
   align-items: center;
@@ -603,16 +593,30 @@ button {
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.6);
 }
 
+/* Полупрозрачная заливка клетки цветом владельца */
+.owner-fill {
+  position: absolute;
+  inset: 0;
+  opacity: 0.32;
+  pointer-events: none;
+}
+
 /* ---------- Боковая панель ---------- */
 
 .side {
-  width: 340px;
+  width: 300px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   min-height: 0;
   overflow-y: auto;
+}
+
+.side-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .panel {
@@ -939,6 +943,20 @@ button {
 
 /* ---------- Кредиты и обмен ---------- */
 
+.deals-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.deals-panel h3 {
+  margin: 0;
+}
+
+.deals-panel .offer-block {
+  margin-top: 0;
+}
+
 .loan-block {
   display: flex;
   flex-direction: column;
@@ -1091,13 +1109,12 @@ button {
   }
 
   .game-body {
+    height: auto;
     flex-direction: column;
   }
 
   .board {
     width: 100%;
-    height: auto;
-    max-height: none;
   }
 
   .side {

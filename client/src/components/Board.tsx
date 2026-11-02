@@ -48,7 +48,6 @@ function Tile({ idx, snap, onSelectTile, onPickTile }: { idx: number; snap: Room
       style={{
         gridRow: pos.row,
         gridColumn: pos.col,
-        ...(owner ? { boxShadow: `inset 0 0 0 3px ${owner.color}` } : {}),
       }}
       title={
         price > 0
@@ -56,6 +55,7 @@ function Tile({ idx, snap, onSelectTile, onPickTile }: { idx: number; snap: Room
           : tile.name
       }
     >
+      {owner && <div className="owner-fill" style={{ background: owner.color }} />}
       {group && (
         <div className="bar" style={{ background: group.color }}>
           {houses === 5 ? (

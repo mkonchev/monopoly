@@ -39,7 +39,7 @@ export default function Deals({ snap, act }: Props) {
   const rescueable = snap.players.filter((p) => p.loan?.due && !p.bankrupt && p.id !== me.id);
 
   return (
-    <section className="panel">
+    <section className="panel deals-panel">
       <h3>Кредиты и обмен</h3>
 
       {me.loan ? (

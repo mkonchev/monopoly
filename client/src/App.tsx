@@ -103,6 +103,7 @@ export default function App() {
           onStart={() => act({ type: 'startGame' })}
           onLeave={leave}
           toast={toast}
+          act={act}
         />
       )}
       {snap && snap.started && <CtxProvider snap={snap} act={act} toast={toast} leave={leave} />}

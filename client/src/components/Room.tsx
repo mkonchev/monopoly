@@ -1,4 +1,4 @@
-import type { RoomSnapshot } from '../../../shared/src/types';
+import type { GameAction, RoomSnapshot } from '../../../shared/src/types';
 
 interface Props {
   snap: RoomSnapshot;
@@ -6,9 +6,10 @@ interface Props {
   onStart: () => void;
   onLeave: () => void;
   toast: (m: string) => void;
+  act: (a: GameAction) => void;
 }
 
-export default function Room({ snap, isHost, onStart, onLeave, toast }: Props) {
+export default function Room({ snap, isHost, onStart, onLeave, toast, act }: Props) {
   const link = `${window.location.origin}/?room=${snap.code}`;
 
   const copy = async () => {
@@ -40,6 +41,17 @@ export default function Room({ snap, isHost, onStart, onLeave, toast }: Props) {
             </li>
           ))}
         </ul>
+        <label className={`check-row setting${isHost ? '' : ' disabled'}`}>
+          <input
+            type="checkbox"
+            checked={snap.state.speedDie}
+            disabled={!isHost}
+            onChange={(e) => act({ type: 'setSpeedDie', enabled: e.target.checked })}
+          />
+          <span>
+            ⚡ <b>Быстрый режим</b> — скоростной кубик: 1–3 к ходу, 🚌 Автобус, 🎩 Мистер Монополия, триплет
+          </span>
+        </label>
         {isHost ? (
           <button className="btn primary big" disabled={snap.players.length < 2} onClick={onStart}>
             {snap.players.length < 2 ? 'Нужно минимум 2 игрока' : 'Начать игру'}

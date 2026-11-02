@@ -128,11 +128,18 @@ export interface GameState {
   logSeq: number;
   bank: { houses: number | null; hotels: number | null };
   offers: { trades: TradeOffer[]; loanRequests: LoanRequest[] };
+  // Быстрый режим (скоростной кубик)
+  speedDie: boolean;
+  speedFace: SpeedFace | null;
+  pendingMrMonopoly: boolean; // ход Мистера Монополии отложен до разрешения покупки/долга
 }
 
 // ---------- Состояние игры (то, что видит клиент) ----------
 
-export type Phase = 'lobby' | 'roll' | 'buy' | 'debt' | 'manage' | 'over';
+export type Phase = 'lobby' | 'roll' | 'buy' | 'debt' | 'manage' | 'over' | 'bus' | 'triplet';
+
+// Грань скоростного кубика (быстрый режим).
+export type SpeedFace = '1' | '2' | '3' | 'bus' | 'm1';
 
 export interface PublicPlayer {
   id: string;
@@ -214,4 +221,8 @@ export type GameAction =
   | { type: 'proposeTrade'; to: string; giveTiles: number[]; giveMoney: number; wantTiles: number[]; wantMoney: number }
   | { type: 'acceptTrade'; id: string }
   | { type: 'declineTrade'; id: string }
-  | { type: 'cancelOffer'; kind: 'trade' | 'loan'; id: string };
+  | { type: 'cancelOffer'; kind: 'trade' | 'loan'; id: string }
+  // быстрый режим (скоростной кубик)
+  | { type: 'setSpeedDie'; enabled: boolean }
+  | { type: 'busMove'; choice: 'sum' | 'd1' | 'd2' }
+  | { type: 'tripletMove'; tile: number };

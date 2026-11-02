@@ -3,18 +3,18 @@ import type { RoomSnapshot } from '../../../shared/src/types';
 import { CORNER_EMOJI, gridPos, sideOf } from '../boardLayout';
 import { fmtCompact, fmtMoney } from '../fmt';
 
-export default function Board({ snap, children, onSelectTile }: { snap: RoomSnapshot; children?: ReactNode; onSelectTile?: (idx: number) => void }) {
+export default function Board({ snap, children, onSelectTile, onPickTile }: { snap: RoomSnapshot; children?: ReactNode; onSelectTile?: (idx: number) => void; onPickTile?: (idx: number) => void }) {
   return (
     <div className="board">
       {snap.board.tiles.map((tile, i) => (
-        <Tile key={i} idx={i} snap={snap} onSelectTile={onSelectTile} />
+        <Tile key={i} idx={i} snap={snap} onSelectTile={onSelectTile} onPickTile={onPickTile} />
       ))}
       <div className="board-center">{children}</div>
     </div>
   );
 }
 
-function Tile({ idx, snap, onSelectTile }: { idx: number; snap: RoomSnapshot; onSelectTile?: (idx: number) => void }) {
+function Tile({ idx, snap, onSelectTile, onPickTile }: { idx: number; snap: RoomSnapshot; onSelectTile?: (idx: number) => void; onPickTile?: (idx: number) => void }) {
   const tile = snap.board.tiles[idx];
   const ps = snap.state.properties[idx];
   const side = sideOf(idx);
@@ -25,18 +25,26 @@ function Tile({ idx, snap, onSelectTile }: { idx: number; snap: RoomSnapshot; on
 
   const price = 'price' in tile ? tile.price : 0;
   const houses = ps?.houses ?? 0;
+  const pickMode = !!onPickTile;
 
   return (
     <div
       className={[
         'tile',
         `side-${side}`,
-        price > 0 ? 'clickable' : '',
+        price > 0 && !pickMode ? 'clickable' : '',
+        pickMode ? 'pickable' : '',
         owner ? 'owned' : '',
         ps?.mortgaged ? 'mortgaged' : '',
         owner?.id === snap.you ? 'mine' : '',
       ].join(' ')}
-      onClick={price > 0 && onSelectTile ? () => onSelectTile(idx) : undefined}
+      onClick={
+        pickMode
+          ? () => onPickTile!(idx)
+          : price > 0 && onSelectTile
+            ? () => onSelectTile(idx)
+            : undefined
+      }
       style={{
         gridRow: pos.row,
         gridColumn: pos.col,

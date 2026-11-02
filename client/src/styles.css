@@ -345,6 +345,54 @@ button {
   background: #222;
 }
 
+.die.speed {
+  background: #e6f4e6;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35), inset 0 -2px 0 #b5d4b5, inset 0 0 0 2px var(--accent);
+}
+
+.speed-chip {
+  width: 40px;
+  height: 40px;
+  background: #e6f4e6;
+  border-radius: 8px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35), inset 0 0 0 2px var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+.tile.pickable {
+  cursor: crosshair;
+  outline: 2px dashed var(--accent);
+  outline-offset: -2px;
+  animation: pick-pulse 1s infinite;
+}
+
+@keyframes pick-pulse {
+  50% {
+    filter: brightness(1.08);
+  }
+}
+
+.check-row.setting {
+  text-align: left;
+  font-size: 14px;
+  background: #f6f6f6;
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.check-row.setting.disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.check-row.setting input {
+  margin-right: 6px;
+}
+
 /* ---------- Клетки ---------- */
 
 .tile {

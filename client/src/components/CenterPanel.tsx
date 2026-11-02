@@ -22,6 +22,25 @@ export default function CenterPanel({ snap, act }: { snap: RoomSnapshot; act: (a
         </button>
       );
     }
+  } else if (isMyTurn && state.phase === 'bus' && state.dice) {
+    const [d1, d2] = state.dice;
+    status = '🚌 Автобус! Выберите, как двигаться';
+    controls = (
+      <div className="btn-row">
+        <button className="btn primary" onClick={() => act({ type: 'busMove', choice: 'sum' })}>
+          Сумма: {d1 + d2}
+          {d1 === d2 ? ' (дубль!)' : ''}
+        </button>
+        <button className="btn secondary" onClick={() => act({ type: 'busMove', choice: 'd1' })}>
+          Только {d1}
+        </button>
+        <button className="btn secondary" onClick={() => act({ type: 'busMove', choice: 'd2' })}>
+          Только {d2}
+        </button>
+      </div>
+    );
+  } else if (isMyTurn && state.phase === 'triplet') {
+    status = '🎰 ТРИПЛЕТ! Кликните любую клетку на доске — туда и переместитесь, затем бросите заново';
   } else if (isMyTurn) {
     if (state.phase === 'roll') {
       if (me.inJail) {
@@ -86,8 +105,15 @@ export default function CenterPanel({ snap, act }: { snap: RoomSnapshot; act: (a
       );
     }
   } else if (turn) {
-    const deciding = state.phase === 'buy' || state.phase === 'debt';
-    status = `Ход: ${turn.name}${turn.inJail ? ' (в тюрьме)' : ''}${deciding ? ' — принимает решение…' : ''}`;
+    const waiting =
+      state.phase === 'bus'
+        ? ' — выбирает перемещение автобуса'
+        : state.phase === 'triplet'
+          ? ' — выбирает клетку для триплета'
+          : state.phase === 'buy' || state.phase === 'debt'
+            ? ' — принимает решение…'
+            : '';
+    status = `Ход: ${turn.name}${turn.inJail ? ' (в тюрьме)' : ''}${waiting}`;
   } else {
     status = 'Ожидание…';
   }
@@ -99,6 +125,17 @@ export default function CenterPanel({ snap, act }: { snap: RoomSnapshot; act: (a
         <div className="dice-row" key={state.rollId}>
           <Die value={dice[0]} />
           <Die value={dice[1]} />
+          {state.speedDie && state.speedFace && (
+            <>
+              {state.speedFace === 'bus' ? (
+                <div className="speed-chip rolling">🚌</div>
+              ) : state.speedFace === 'm1' ? (
+                <div className="speed-chip rolling">🎩</div>
+              ) : (
+                <Die value={Number(state.speedFace)} speed />
+              )}
+            </>
+          )}
         </div>
       )}
       <div className="status">{status}</div>
@@ -121,9 +158,9 @@ const PIPS: Record<number, number[]> = {
   6: [1, 3, 4, 6, 7, 9],
 };
 
-function Die({ value }: { value: number }) {
+function Die({ value, speed }: { value: number; speed?: boolean }) {
   return (
-    <div className="die rolling">
+    <div className={speed ? 'die rolling speed' : 'die rolling'}>
       {Array.from({ length: 9 }, (_, k) => (
         <span key={k} className={PIPS[value]?.includes(k + 1) ? 'pip on' : 'pip'} />
       ))}

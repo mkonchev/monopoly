@@ -18,6 +18,7 @@ interface Props {
 
 export default function Game({ snap, act, leave }: Props) {
   const [infoTile, setInfoTile] = useState<number | null>(null);
+  const pickMode = snap.state.phase === 'triplet' && snap.you === snap.state.turnPlayer;
   return (
     <div className="game">
       <header className="game-header">
@@ -28,7 +29,11 @@ export default function Game({ snap, act, leave }: Props) {
         </button>
       </header>
       <div className="game-body">
-        <Board snap={snap} onSelectTile={setInfoTile}>
+        <Board
+          snap={snap}
+          onSelectTile={setInfoTile}
+          onPickTile={pickMode ? (idx) => act({ type: 'tripletMove', tile: idx }) : undefined}
+        >
           <CenterPanel snap={snap} act={act} />
         </Board>
         <aside className="side">

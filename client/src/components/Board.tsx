@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { RoomSnapshot } from '../../../shared/src/types';
+import { figureEmoji } from '../../../shared/src/tokens';
 import { CORNER_EMOJI, gridPos, sideOf } from '../boardLayout';
 import { fmtCompact, fmtMoney } from '../fmt';
 
@@ -83,7 +84,7 @@ function Tile({ idx, snap, onSelectTile, onPickTile }: { idx: number; snap: Room
         <div className="tokens">
           {tokens.map((t) => (
             <span key={t.id} className="token" style={{ background: t.color }} title={t.name}>
-              {t.name.slice(0, 1)}
+              {figureEmoji(t.figure)}
             </span>
           ))}
         </div>

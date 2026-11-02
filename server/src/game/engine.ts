@@ -1,4 +1,5 @@
 import type { BoardConfig, CardDef, CardEffect, GameState, LoanRules, LoanState, PropertyState, SpeedFace, Tile } from '../../../shared/src/types';
+import { FIGURES } from '../../../shared/src/tokens';
 
 export class GameError extends Error {}
 
@@ -16,6 +17,7 @@ export interface Player {
   isHost: boolean;
   socketIds: Set<string>;
   loan: LoanState | null;
+  figure: string | null;
 }
 
 export interface GameRoom {
@@ -151,8 +153,14 @@ function transferEverything(room: GameRoom, p: Player, receiver: string | 'bank'
 
 function removeOffersOf(room: GameRoom, playerId: string): void {
   const offers = room.state.offers;
+  const removedTrade = offers.trades.find((t) => t.from === playerId || t.to === playerId);
+  const removedLoan = offers.loanRequests.find((r) => r.from === playerId || r.to === playerId);
   offers.trades = offers.trades.filter((t) => t.from !== playerId && t.to !== playerId);
   offers.loanRequests = offers.loanRequests.filter((r) => r.from !== playerId && r.to !== playerId);
+  const aw = room.state.awaitingOffer;
+  if (aw && ((removedTrade && aw.id === removedTrade.id) || (removedLoan && aw.id === removedLoan.id))) {
+    room.state.awaitingOffer = null;
+  }
 }
 
 // ---------- Создание и сброс игры ----------
@@ -175,6 +183,7 @@ export function createLobbyState(): GameState {
     logSeq: 0,
     bank: { houses: null, hotels: null },
     offers: { trades: [], loanRequests: [] },
+    awaitingOffer: null,
     speedDie: false,
     speedFace: null,
     pendingMrMonopoly: false,
@@ -200,6 +209,7 @@ export function startGame(room: GameRoom): void {
     logSeq: 0,
     bank: { houses: b.rules.housesLimit, hotels: b.rules.hotelsLimit },
     offers: { trades: [], loanRequests: [] },
+    awaitingOffer: null,
     speedDie: room.state.speedDie === true,
     speedFace: null,
     pendingMrMonopoly: false,
@@ -212,6 +222,10 @@ export function startGame(room: GameRoom): void {
     p.jailCards = 0;
     p.bankrupt = false;
     p.loan = null;
+    // кто не выбрал фигурку в лобби — получает первую свободную
+    if (!p.figure || room.players.some((q) => q !== p && q.figure === p.figure)) {
+      p.figure = FIGURES.find((f) => !room.players.some((q) => q !== p && q.figure === f.id))?.id ?? FIGURES[0].id;
+    }
   }
   room.decks = { chance: shuffle([...b.chance]), chest: shuffle([...b.chest]) };
   room.discards = { chance: [], chest: [] };
@@ -748,6 +762,13 @@ export function applyAction(room: GameRoom, p: Player, action: GameAction): void
   room.lastActivity = Date.now();
   const s = room.state;
 
+  // Пока предложение обмена/займа не получило ответ — все действия заморожены,
+  // кроме самого ответа (и отмены автором / выбора фигурки в лобби).
+  const RESPONSE_ACTIONS = new Set(['acceptTrade', 'declineTrade', 'acceptLoanRequest', 'declineLoanRequest', 'cancelOffer', 'setFigure']);
+  if (s.awaitingOffer && !RESPONSE_ACTIONS.has(action.type)) {
+    throw new GameError('Дождитесь ответа на предложение — игра приостановлена');
+  }
+
   switch (action.type) {
     case 'startGame': {
       if (!p.isHost) throw new GameError('Только хост может начать игру');
@@ -957,6 +978,8 @@ export function applyAction(room: GameRoom, p: Player, action: GameAction): void
     }
     case 'requestLoanFrom': {
       requireOwnTurn(room, p);
+      if (s.phase !== 'roll' && s.phase !== 'manage') throw new GameError('Займ запрашивают в свой ход, до или после броска');
+      requireNoAwaiting(room);
       if (p.loan) throw new GameError('У вас уже есть кредит — сначала погасите его');
       const target = room.players.find((x) => x.id === action.to);
       if (!target || target.id === p.id) throw new GameError('Неверный игрок');
@@ -967,14 +990,17 @@ export function applyAction(room: GameRoom, p: Player, action: GameAction): void
       if (amount > cfg.maxPrincipal) throw new GameError(`Максимум ${fmtMoney(room, cfg.maxPrincipal)}`);
       if (target.money < amount) throw new GameError(`У ${target.name} нет столько денег`);
       s.offers.loanRequests = s.offers.loanRequests.filter((r) => r.from !== p.id);
-      s.offers.loanRequests.push({ id: newOfferId(), from: p.id, to: target.id, amount });
-      log(s, `🤲 ${p.name} просит у ${target.name} в долг ${fmtMoney(room, amount)} (ставка ${pct(cfg.playerRate)} за ход)`);
+      const req = { id: newOfferId(), from: p.id, to: target.id, amount };
+      s.offers.loanRequests.push(req);
+      s.awaitingOffer = { kind: 'loan', id: req.id, from: p.id, to: target.id };
+      log(s, `🤲 ${p.name} просит у ${target.name} в долг ${fmtMoney(room, amount)} (ставка ${pct(cfg.playerRate)} за ход) — ждём ответа`);
       return;
     }
     case 'acceptLoanRequest': {
-      requireOwnTurn(room, p);
+      requireActivePlayer(room, p);
       const req = s.offers.loanRequests.find((r) => r.id === action.id);
       if (!req) throw new GameError('Предложение не найдено');
+      if (!s.awaitingOffer || s.awaitingOffer.id !== req.id) throw new GameError('Это предложение уже не активно');
       if (req.to !== p.id) throw new GameError('Это предложение не вам');
       const borrower = room.players.find((x) => x.id === req.from);
       if (!borrower || borrower.bankrupt) throw new GameError('Заёмщик недоступен');
@@ -995,15 +1021,17 @@ export function applyAction(room: GameRoom, p: Player, action: GameAction): void
         rescued: false,
       };
       s.offers.loanRequests = s.offers.loanRequests.filter((r) => r.id !== req.id);
+      s.awaitingOffer = null;
       log(s, `🤝 ${p.name} даёт ${borrower.name} в долг ${fmtMoney(room, req.amount)} под ${pct(cfg.playerRate)} за ход`);
       return;
     }
     case 'declineLoanRequest': {
-      requireOwnTurn(room, p);
       const req = s.offers.loanRequests.find((r) => r.id === action.id);
       if (!req) throw new GameError('Предложение не найдено');
+      if (!s.awaitingOffer || s.awaitingOffer.id !== req.id) throw new GameError('Это предложение уже не активно');
       if (req.to !== p.id && req.from !== p.id) throw new GameError('Это предложение не ваше');
       s.offers.loanRequests = s.offers.loanRequests.filter((r) => r.id !== req.id);
+      s.awaitingOffer = null;
       log(s, `${p.name} отклоняет просьбу о займе`);
       return;
     }
@@ -1065,6 +1093,8 @@ export function applyAction(room: GameRoom, p: Player, action: GameAction): void
 
     case 'proposeTrade': {
       requireOwnTurn(room, p);
+      if (s.phase !== 'roll' && s.phase !== 'manage') throw new GameError('Обмен предлагают в свой ход, до или после броска');
+      requireNoAwaiting(room);
       const target = room.players.find((x) => x.id === action.to);
       if (!target || target.id === p.id) throw new GameError('Неверный игрок');
       if (target.bankrupt) throw new GameError(`${target.name} банкрот`);
@@ -1087,7 +1117,7 @@ export function applyAction(room: GameRoom, p: Player, action: GameAction): void
       if (giveTiles.length + giveMoney === 0 || wantTiles.length + wantMoney === 0) {
         throw new GameError('Обмен должен быть чем-то интересен обеим сторонам');
       }
-      s.offers.trades.push({
+      const offer = {
         id: newOfferId(),
         from: p.id,
         to: target.id,
@@ -1095,14 +1125,17 @@ export function applyAction(room: GameRoom, p: Player, action: GameAction): void
         giveMoney,
         wantTiles,
         wantMoney,
-      });
-      log(s, `🔄 ${p.name} предлагает ${target.name} обмен`);
+      };
+      s.offers.trades.push(offer);
+      s.awaitingOffer = { kind: 'trade', id: offer.id, from: p.id, to: target.id };
+      log(s, `🔄 ${p.name} предлагает ${target.name} обмен — ждём ответа`);
       return;
     }
     case 'acceptTrade': {
-      requireOwnTurn(room, p);
+      requireActivePlayer(room, p);
       const offer = s.offers.trades.find((t) => t.id === action.id);
       if (!offer) throw new GameError('Предложение обмена не найдено');
+      if (!s.awaitingOffer || s.awaitingOffer.id !== offer.id) throw new GameError('Это предложение уже не активно');
       if (offer.to !== p.id) throw new GameError('Это предложение не вам');
       const giver = room.players.find((x) => x.id === offer.from);
       if (!giver || giver.bankrupt) throw new GameError('Автор предложения недоступен');
@@ -1123,15 +1156,17 @@ export function applyAction(room: GameRoom, p: Player, action: GameAction): void
       for (const idx of offer.giveTiles) s.properties[idx]!.owner = p.id;
       for (const idx of offer.wantTiles) s.properties[idx]!.owner = giver.id;
       s.offers.trades = s.offers.trades.filter((t) => t.id !== offer.id);
+      s.awaitingOffer = null;
       log(s, `✅ ${giver.name} и ${p.name} совершили обмен`);
       return;
     }
     case 'declineTrade': {
-      requireOwnTurn(room, p);
       const offer = s.offers.trades.find((t) => t.id === action.id);
       if (!offer) throw new GameError('Предложение обмена не найдено');
+      if (!s.awaitingOffer || s.awaitingOffer.id !== offer.id) throw new GameError('Это предложение уже не активно');
       if (offer.to !== p.id && offer.from !== p.id) throw new GameError('Это предложение не ваше');
       s.offers.trades = s.offers.trades.filter((t) => t.id !== offer.id);
+      s.awaitingOffer = null;
       log(s, `${p.name} отклоняет предложение обмена`);
       return;
     }
@@ -1141,12 +1176,22 @@ export function applyAction(room: GameRoom, p: Player, action: GameAction): void
         if (!offer) throw new GameError('Предложение не найдено');
         if (offer.from !== p.id) throw new GameError('Это не ваше предложение');
         s.offers.trades = s.offers.trades.filter((t) => t.id !== offer.id);
+        if (s.awaitingOffer?.id === offer.id) s.awaitingOffer = null;
       } else {
         const req = s.offers.loanRequests.find((r) => r.id === action.id);
         if (!req) throw new GameError('Предложение не найдено');
         if (req.from !== p.id) throw new GameError('Это не ваша просьба');
         s.offers.loanRequests = s.offers.loanRequests.filter((r) => r.id !== req.id);
+        if (s.awaitingOffer?.id === req.id) s.awaitingOffer = null;
       }
+      return;
+    }
+
+    case 'setFigure': {
+      if (s.phase !== 'lobby') throw new GameError('Фигурка выбирается только до начала игры');
+      if (!FIGURES.some((f) => f.id === action.figure)) throw new GameError('Неизвестная фигурка');
+      if (room.players.some((q) => q.id !== p.id && q.figure === action.figure)) throw new GameError('Эту фигурку уже выбрали');
+      p.figure = action.figure;
       return;
     }
 
@@ -1205,6 +1250,11 @@ function requireActivePlayer(room: GameRoom, p: Player): void {
 function requireOwnTurn(room: GameRoom, p: Player): void {
   requireActivePlayer(room, p);
   if (!isCurrent(room, p)) throw new GameError('Кредиты, обмены и спасение доступны только в ваш ход');
+}
+
+// Пока предложение обмена/займа висит без ответа — ход предложившего приостановлен.
+function requireNoAwaiting(room: GameRoom): void {
+  if (room.state.awaitingOffer) throw new GameError('Дождитесь ответа на ваше предложение');
 }
 
 // Обмен: улицы без построек; вокзалы/предприятия — всегда.

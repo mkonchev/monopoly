@@ -51,6 +51,7 @@ function makeRoom(n: number, b: BoardConfig = board): GameRoom {
       bankrupt: false,
       isHost: i === 0,
       socketIds: new Set(['s']),
+      figure: null,
       loan: null,
     });
   }

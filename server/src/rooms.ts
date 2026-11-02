@@ -94,6 +94,7 @@ export class RoomManager {
       isHost,
       socketIds: new Set(),
       loan: null,
+      figure: null,
     };
     room.players.push(player);
     return player;

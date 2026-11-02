@@ -29,6 +29,8 @@ export default function Deals({ snap, act }: Props) {
   if (!me || me.bankrupt || snap.state.phase === 'over') return null;
   const cur = snap.board.meta.currency;
   const myTurn = snap.you === snap.state.turnPlayer;
+  const aw = snap.state.awaitingOffer;
+  const canAct = myTurn && !aw;
   const turnHint = !myTurn && <div className="hint">⏳ Кредиты, обмены и спасение — только в свой ход</div>;
 
   const nameOf = (id: string) => snap.players.find((p) => p.id === id)?.name ?? '???';
@@ -43,13 +45,13 @@ export default function Deals({ snap, act }: Props) {
       <h3>Кредиты и обмен</h3>
 
       {me.loan ? (
-        <LoanBlock snap={snap} act={act} myTurn={myTurn} />
+        <LoanBlock snap={snap} act={act} myTurn={myTurn && !aw} />
       ) : (
         <div className="btn-row">
-          <button className="btn secondary" disabled={!myTurn} onClick={() => setModal('bank-loan')}>
+          <button className="btn secondary" disabled={!canAct} onClick={() => setModal('bank-loan')}>
             🏦 Кредит в банке
           </button>
-          <button className="btn secondary" disabled={!myTurn} onClick={() => setModal('player-loan')}>
+          <button className="btn secondary" disabled={!canAct} onClick={() => setModal('player-loan')}>
             🤝 Занять у игрока
           </button>
         </div>
@@ -58,39 +60,49 @@ export default function Deals({ snap, act }: Props) {
       {(incomingTrades.length > 0 || incomingLoans.length > 0) && (
         <div className="offer-block">
           <div className="offer-title">Входящие предложения</div>
-          {turnHint}
-          {incomingLoans.map((r) => (
-            <div key={r.id} className="offer-row">
-              <span>
-                🤲 <b>{nameOf(r.from)}</b> просит в долг {fmtMoney(r.amount, cur)}
-              </span>
-              <span className="offer-actions">
-                <button className="mini-btn" disabled={!myTurn} onClick={() => act({ type: 'acceptLoanRequest', id: r.id })}>
-                  Дать
-                </button>
-                <button className="mini-btn" disabled={!myTurn} onClick={() => act({ type: 'declineLoanRequest', id: r.id })}>
-                  Отказать
-                </button>
-              </span>
-            </div>
-          ))}
-          {incomingTrades.map((t) => (
-            <div key={t.id} className="offer-row">
-              <span>
-                🔄 <b>{nameOf(t.from)}</b> отдаёт: {describeTiles(snap, t.giveTiles)}
-                {t.giveMoney > 0 && ` + ${fmtMoney(t.giveMoney, cur)}`} ↔ хочет: {describeTiles(snap, t.wantTiles)}
-                {t.wantMoney > 0 && ` + ${fmtMoney(t.wantMoney, cur)}`}
-              </span>
-              <span className="offer-actions">
-                <button className="mini-btn" disabled={!myTurn} onClick={() => act({ type: 'acceptTrade', id: t.id })}>
-                  Принять
-                </button>
-                <button className="mini-btn" disabled={!myTurn} onClick={() => act({ type: 'declineTrade', id: t.id })}>
-                  Отказать
-                </button>
-              </span>
-            </div>
-          ))}
+          {aw && aw.to === me.id ? (
+            <div className="due-warning">⚡ Игра приостановлена — ответьте сейчас</div>
+          ) : (
+            turnHint
+          )}
+          {incomingLoans.map((r) => {
+            const active = aw?.id === r.id;
+            return (
+              <div key={r.id} className={'offer-row' + (active ? ' active' : '')}>
+                <span>
+                  🤲 <b>{nameOf(r.from)}</b> просит в долг {fmtMoney(r.amount, cur)}
+                </span>
+                <span className="offer-actions">
+                  <button className="mini-btn" disabled={!active} onClick={() => act({ type: 'acceptLoanRequest', id: r.id })}>
+                    Дать
+                  </button>
+                  <button className="mini-btn" disabled={!active} onClick={() => act({ type: 'declineLoanRequest', id: r.id })}>
+                    Отказать
+                  </button>
+                </span>
+              </div>
+            );
+          })}
+          {incomingTrades.map((t) => {
+            const active = aw?.id === t.id;
+            return (
+              <div key={t.id} className={'offer-row' + (active ? ' active' : '')}>
+                <span>
+                  🔄 <b>{nameOf(t.from)}</b> отдаёт: {describeTiles(snap, t.giveTiles)}
+                  {t.giveMoney > 0 && ` + ${fmtMoney(t.giveMoney, cur)}`} ↔ хочет: {describeTiles(snap, t.wantTiles)}
+                  {t.wantMoney > 0 && ` + ${fmtMoney(t.wantMoney, cur)}`}
+                </span>
+                <span className="offer-actions">
+                  <button className="mini-btn" disabled={!active} onClick={() => act({ type: 'acceptTrade', id: t.id })}>
+                    Принять
+                  </button>
+                  <button className="mini-btn" disabled={!active} onClick={() => act({ type: 'declineTrade', id: t.id })}>
+                    Отказать
+                  </button>
+                </span>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -124,7 +136,7 @@ export default function Deals({ snap, act }: Props) {
               <span>
                 🤲 К {nameOf(r.to)}: просите {fmtMoney(r.amount, cur)}
               </span>
-              <button className="mini-btn" disabled={!myTurn} onClick={() => act({ type: 'cancelOffer', kind: 'loan', id: r.id })}>
+              <button className="mini-btn" disabled={!(aw?.id === r.id && aw.from === me.id)} onClick={() => act({ type: 'cancelOffer', kind: 'loan', id: r.id })}>
                 Отменить
               </button>
             </div>
@@ -136,7 +148,7 @@ export default function Deals({ snap, act }: Props) {
                 {t.giveMoney > 0 && ` + ${fmtMoney(t.giveMoney, cur)}`} ↔ {describeTiles(snap, t.wantTiles)}
                 {t.wantMoney > 0 && ` + ${fmtMoney(t.wantMoney, cur)}`}
               </span>
-              <button className="mini-btn" disabled={!myTurn} onClick={() => act({ type: 'cancelOffer', kind: 'trade', id: t.id })}>
+              <button className="mini-btn" disabled={!(aw?.id === t.id && aw.from === me.id)} onClick={() => act({ type: 'cancelOffer', kind: 'trade', id: t.id })}>
                 Отменить
               </button>
             </div>
@@ -145,7 +157,7 @@ export default function Deals({ snap, act }: Props) {
       )}
 
       <div className="btn-row">
-        <button className="btn secondary" disabled={!myTurn} onClick={() => setModal('trade')}>
+        <button className="btn secondary" disabled={!canAct} onClick={() => setModal('trade')}>
           🔄 Предложить обмен
         </button>
       </div>

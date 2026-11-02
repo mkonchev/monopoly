@@ -13,7 +13,15 @@ export default function CenterPanel({ snap, act }: { snap: RoomSnapshot; act: (a
   let status = '';
   let controls: React.ReactNode = null;
 
-  if (state.phase === 'over') {
+  if (state.awaitingOffer) {
+    const a = state.awaitingOffer;
+    const from = players.find((p) => p.id === a.from)?.name ?? '???';
+    const to = players.find((p) => p.id === a.to)?.name ?? '???';
+    status =
+      a.kind === 'trade'
+        ? `⏸ ${from} ждёт ответа ${to} на предложение обмена`
+        : `⏸ ${from} ждёт ответа ${to} на просьбу о займе`;
+  } else if (state.phase === 'over') {
     status = `🏆 Победил(а) ${players.find((p) => p.id === state.winner)?.name ?? '—'}!`;
     if (me?.isHost) {
       controls = (

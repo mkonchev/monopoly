@@ -128,6 +128,7 @@ export interface GameState {
   logSeq: number;
   bank: { houses: number | null; hotels: number | null };
   offers: { trades: TradeOffer[]; loanRequests: LoanRequest[] };
+  awaitingOffer: AwaitingOffer | null;
   // Быстрый режим (скоростной кубик)
   speedDie: boolean;
   speedFace: SpeedFace | null;
@@ -140,6 +141,14 @@ export type Phase = 'lobby' | 'roll' | 'buy' | 'debt' | 'manage' | 'over' | 'bus
 
 // Грань скоростного кубика (быстрый режим).
 export type SpeedFace = '1' | '2' | '3' | 'bus' | 'm1';
+
+// Ожидание ответа на предложение обмена/займа: ход предложившего приостановлен.
+export interface AwaitingOffer {
+  kind: 'trade' | 'loan';
+  id: string;
+  from: string;
+  to: string;
+}
 
 export interface PublicPlayer {
   id: string;
@@ -155,6 +164,7 @@ export interface PublicPlayer {
   isHost: boolean;
   netWorth: number;
   loan: LoanState | null;
+  figure: string | null; // id фигурки из FIGURES
 }
 
 export interface PropertyState {
@@ -225,4 +235,6 @@ export type GameAction =
   // быстрый режим (скоростной кубик)
   | { type: 'setSpeedDie'; enabled: boolean }
   | { type: 'busMove'; choice: 'sum' | 'd1' | 'd2' }
-  | { type: 'tripletMove'; tile: number };
+  | { type: 'tripletMove'; tile: number }
+  // фигурка
+  | { type: 'setFigure'; figure: string };

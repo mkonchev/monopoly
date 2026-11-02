@@ -49,6 +49,7 @@ function makeRoom(n: number): GameRoom {
       bankrupt: false,
       isHost: i === 0,
       socketIds: new Set(['s']),
+      figure: null,
       loan: null,
     });
   }
@@ -218,7 +219,6 @@ describe('продление и изъятие', () => {
     const idx = tileIdx(room, 'Тестовая улица');
     room.state.properties[idx]!.owner = 'p0';
     act(room, 0, { type: 'requestLoanFrom', to: 'p1', amount: 300000 });
-    turn(room, 0); // ход переходит к p1
     act(room, 1, { type: 'acceptLoanRequest', id: room.state.offers.loanRequests[0]!.id });
     expect(p.loan!.creditor).toBe('p1');
     const creditorBefore = creditor.money;
@@ -232,27 +232,38 @@ describe('продление и изъятие', () => {
 });
 
 describe('займ между игроками', () => {
-  it('просьба → согласие: деньги переводятся, кредит создан под ставку игрока', () => {
+  it('просьба → согласие: ответ приходит сразу, деньги переводятся', () => {
     const room = makeRoom(3);
     act(room, 0, { type: 'requestLoanFrom', to: 'p2', amount: 250000 });
     expect(room.state.offers.loanRequests).toHaveLength(1);
-    turn(room, 0);
-    turn(room, 1); // ход переходит к p2
+    expect(room.state.awaitingOffer?.kind).toBe('loan');
     act(room, 2, { type: 'acceptLoanRequest', id: room.state.offers.loanRequests[0]!.id });
     expect(room.players[2].money).toBe(board.rules.startMoney - 250000);
     expect(room.players[0].money).toBe(board.rules.startMoney + 250000);
     expect(room.players[0].loan!.creditor).toBe('p2');
     expect(room.players[0].loan!.rate).toBeCloseTo(0.05, 5);
     expect(room.state.offers.loanRequests).toHaveLength(0);
+    expect(room.state.awaitingOffer).toBeNull();
   });
 
   it('отказ убирает заявку', () => {
     const room = makeRoom(2);
     act(room, 0, { type: 'requestLoanFrom', to: 'p1', amount: 100000 });
-    turn(room, 0); // ход переходит к p1
     act(room, 1, { type: 'declineLoanRequest', id: room.state.offers.loanRequests[0]!.id });
     expect(room.state.offers.loanRequests).toHaveLength(0);
     expect(room.players[0].loan).toBeNull();
+    expect(room.state.awaitingOffer).toBeNull();
+  });
+
+  it('пока займ ждёт ответа — ход предложившего заморожен', () => {
+    const room = makeRoom(2);
+    act(room, 0, { type: 'requestLoanFrom', to: 'p1', amount: 100000 });
+    expect(() => act(room, 0, { type: 'roll' })).toThrow(GameError);
+    expect(() => act(room, 0, { type: 'endTurn' })).toThrow(GameError);
+    // не-получатель ответить не может
+    expect(() => act(room, 0, { type: 'acceptLoanRequest', id: room.state.offers.loanRequests[0]!.id })).toThrow(GameError);
+    act(room, 1, { type: 'declineLoanRequest', id: room.state.offers.loanRequests[0]!.id });
+    act(room, 0, { type: 'roll' }); // после отказа ход разморожен
   });
 
   it('вне своего хода кредиты и обмены запрещены', () => {
@@ -371,7 +382,6 @@ describe('обмен собственностью', () => {
     act(room, 0, { type: 'proposeTrade', to: 'p1', giveTiles: [a], giveMoney: 50000, wantTiles: [b], wantMoney: 0 });
     const money0 = room.players[0].money;
     const money1 = room.players[1].money;
-    turn(room, 0); // ход переходит к p1 — принимает в свой ход
     act(room, 1, { type: 'acceptTrade', id: room.state.offers.trades[0]!.id });
     expect(room.state.properties[a]!.owner).toBe('p1');
     expect(room.state.properties[b]!.owner).toBe('p0');
@@ -396,7 +406,6 @@ describe('обмен собственностью', () => {
     room.state.properties[a]!.owner = 'p0';
     act(room, 0, { type: 'proposeTrade', to: 'p1', giveTiles: [a], giveMoney: 100000, wantTiles: [], wantMoney: 4000 });
     room.players[0].money = 0;
-    turn(room, 0); // ход p1
     expect(() => act(room, 1, { type: 'acceptTrade', id: room.state.offers.trades[0]!.id })).toThrow(GameError);
   });
 
@@ -410,7 +419,6 @@ describe('обмен собственностью', () => {
     act(room, 0, { type: 'cancelOffer', kind: 'trade', id: room.state.offers.trades[0]!.id });
     expect(room.state.offers.trades).toHaveLength(0);
     act(room, 0, { type: 'proposeTrade', to: 'p1', giveTiles: [a], giveMoney: 0, wantTiles: [b], wantMoney: 0 });
-    turn(room, 0); // ход p1
     act(room, 1, { type: 'declineTrade', id: room.state.offers.trades[0]!.id });
     expect(room.state.offers.trades).toHaveLength(0);
   });

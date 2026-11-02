@@ -8,6 +8,7 @@ import LogPanel from './LogPanel';
 import CardModal from './CardModal';
 import TileInfo from './TileInfo';
 import Deals from './Deals';
+import AllProperties from './AllProperties';
 
 interface Props {
   snap: RoomSnapshot;
@@ -22,6 +23,7 @@ export default function Game({ snap, act, leave }: Props) {
   return (
     <div className="game">
       <div className="game-body">
+        <AllProperties snap={snap} onSelectTile={setInfoTile} />
         <Board
           snap={snap}
           onSelectTile={setInfoTile}

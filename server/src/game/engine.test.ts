@@ -33,6 +33,7 @@ function makeRoom(n: number): GameRoom {
       bankrupt: false,
       isHost: i === 0,
       socketIds: new Set(['s']),
+      figure: null,
     });
   }
   startGame(room);

@@ -55,6 +55,7 @@ function snapshot(room: GameRoom, you: string | null): RoomSnapshot {
       isHost: p.isHost,
       netWorth: p.bankrupt ? 0 : netWorth(room, p),
       loan: p.loan,
+      figure: p.figure,
     })),
   };
 }

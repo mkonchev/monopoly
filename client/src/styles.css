@@ -224,8 +224,9 @@ button {
 
 .board {
   display: grid;
-  grid-template-rows: repeat(11, 1fr);
-  grid-template-columns: repeat(11, 1fr);
+  /* Клетки-улицы прямоугольные 1:1.5, углы квадратные — как на бумажной доске */
+  grid-template-rows: 1fr repeat(9, 1.5fr) 1fr;
+  grid-template-columns: 1fr repeat(9, 1.5fr) 1fr;
   aspect-ratio: 1;
   width: min(100%, calc(100vh - 12px));
   max-height: 100%;
@@ -599,6 +600,128 @@ button {
   inset: 0;
   opacity: 0.32;
   pointer-events: none;
+}
+
+/* ---------- Левая колонка: имущество всех игроков ---------- */
+
+.left-col {
+  width: 250px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.own-panel {
+  padding: 10px 12px;
+}
+
+.own-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.own-head .fig {
+  font-size: 16px;
+}
+
+.own-group {
+  margin-bottom: 8px;
+}
+
+.own-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.own-row:hover {
+  background: #f1eee4;
+}
+
+.own-name {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.own-name.full {
+  font-weight: 800;
+}
+
+.mini-house {
+  width: 9px;
+  height: 9px;
+  background: #1a7a2e;
+  border: 0.5px solid #0d3d17;
+  display: inline-block;
+}
+
+.houses-icon {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.hotel-icon {
+  width: 18px;
+  height: 13px;
+  background: #f7c900;
+  border: 1.5px solid #a8860b;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.mort {
+  font-size: 11px;
+}
+
+/* ---------- Фигурки ---------- */
+
+.fig {
+  font-size: 15px;
+}
+
+.figure-picker {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.fig-btn {
+  border: 1px solid #ddd;
+  background: #fff;
+  border-radius: 6px;
+  font-size: 15px;
+  padding: 2px 4px;
+  cursor: pointer;
+  line-height: 1.2;
+}
+
+.fig-btn.on {
+  outline: 2px solid var(--accent);
+  background: #eaf5ea;
+}
+
+.fig-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.offer-row.active {
+  outline: 2px solid var(--accent);
+  background: #eaf5ea;
 }
 
 /* ---------- Боковая панель ---------- */
@@ -1101,6 +1224,12 @@ button {
 }
 
 /* ---------- Мобильная вёрстка ---------- */
+
+@media (max-width: 1100px) {
+  .left-col {
+    display: none;
+  }
+}
 
 @media (max-width: 900px) {
   .game {

@@ -1,4 +1,5 @@
 import type { RoomSnapshot } from '../../../shared/src/types';
+import { figureEmoji } from '../../../shared/src/tokens';
 import { fmtMoney } from '../fmt';
 
 export default function Players({ snap }: { snap: RoomSnapshot }) {
@@ -20,7 +21,7 @@ export default function Players({ snap }: { snap: RoomSnapshot }) {
             <span className="dot" style={{ background: p.color }} />
             <div className="player-main">
               <div className="player-name">
-                {p.name}
+                <span className="fig">{figureEmoji(p.figure)}</span> {p.name}
                 {p.isHost && ' 👑'}
                 {p.inJail && ' 🚔'}
                 {p.jailCards > 0 && ` 🎫${p.jailCards}`}

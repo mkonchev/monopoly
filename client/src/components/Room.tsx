@@ -1,4 +1,5 @@
 import type { GameAction, RoomSnapshot } from '../../../shared/src/types';
+import { FIGURES, figureEmoji } from '../../../shared/src/tokens';
 
 interface Props {
   snap: RoomSnapshot;
@@ -35,9 +36,30 @@ export default function Room({ snap, isHost, onStart, onLeave, toast, act }: Pro
           {snap.players.map((p) => (
             <li key={p.id}>
               <span className="dot" style={{ background: p.color }} />
-              {p.name}
-              {p.isHost && ' 👑'}
-              {!p.connected && ' 💤'}
+              <span className="fig">{figureEmoji(p.figure)}</span>
+              <span className="lobby-name">
+                {p.name}
+                {p.isHost && ' 👑'}
+                {!p.connected && ' 💤'}
+              </span>
+              {p.id === snap.you && (
+                <span className="figure-picker">
+                  {FIGURES.map((f) => {
+                    const taken = snap.players.some((q) => q.id !== p.id && q.figure === f.id);
+                    return (
+                      <button
+                        key={f.id}
+                        className={'fig-btn' + (p.figure === f.id ? ' on' : '')}
+                        disabled={taken && p.figure !== f.id}
+                        title={f.name}
+                        onClick={() => act({ type: 'setFigure', figure: f.id })}
+                      >
+                        {f.emoji}
+                      </button>
+                    );
+                  })}
+                </span>
+              )}
             </li>
           ))}
         </ul>

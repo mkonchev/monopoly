@@ -23,6 +23,9 @@
       "fine": 50000,
       "rolls": 10,
       "tiles": 6
+    },
+    "drone": {
+      "chance": 0.02
     }
   },
   "groups": {

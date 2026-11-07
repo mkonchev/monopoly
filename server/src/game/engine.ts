@@ -186,6 +186,7 @@ export function createLobbyState(): GameState {
     awaitingOffer: null,
     cops: null,
     copsFinePending: false,
+    drone: null,
     casinoPot: 0,
     lastCasinoRoll: null,
     casinoSeq: 0,
@@ -217,6 +218,7 @@ export function startGame(room: GameRoom): void {
     awaitingOffer: null,
     cops: null,
     copsFinePending: false,
+    drone: null,
     casinoPot: 0,
     lastCasinoRoll: null,
     casinoSeq: 0,
@@ -398,6 +400,13 @@ function doMrMonopoly(room: GameRoom, p: Player): void {
 
 function resolveTile(room: GameRoom, p: Player, depth: number): void {
   const s = room.state;
+  if (s.drone && s.drone.tile === p.position) {
+    // поле уничтожено дроном — здесь нет ни ренты, ни покупки, ни ментов
+    s.copsFinePending = false;
+    log(s, `🕳️ ${p.name} приехал(а) на разрушенное поле «${tileOf(room, p.position).name}» — тут ничего нет`);
+    finishResolution(room);
+    return;
+  }
   s.copsFinePending = true; // приехали на клетку — штраф ментов спишется при завершении
   const tile = tileOf(room, p.position);
   switch (tile.type) {
@@ -887,6 +896,7 @@ export function applyAction(room: GameRoom, p: Player, action: GameAction): void
       if (s.phase !== 'roll') throw new GameError('Сейчас нельзя бросать кубики');
       doRoll(room, p);
       tickCops(room);
+      tickDrone(room);
       return;
     }
     case 'buy': {
@@ -1329,6 +1339,21 @@ function copsCfg(room: GameRoom): Required<NonNullable<BoardConfig['rules']['cop
 }
 
 // Вызывается после каждого броска: событие тикает или появляется с шансом.
+// Случайное событие «Дрон»: максимум один раз за игру уничтожает случайное поле.
+function tickDrone(room: GameRoom): void {
+  const s = room.state;
+  if (s.phase === 'over' || s.drone) return;
+  const chance = room.board.rules.drone?.chance ?? 0.02;
+  if (Math.random() >= chance) return;
+  // углы не трогаем: СТАРТ, тюрьма, казино и «иди в тюрьму» — структурные
+  const candidates = room.board.tiles.map((_, i) => i).filter((i) => i !== 0 && i !== 10 && i !== 20 && i !== 30);
+  const tile = candidates[Math.floor(Math.random() * candidates.length)];
+  s.drone = { tile, seq: 1 };
+  const owner = s.properties[tile].owner;
+  log(s, `🛸 ДРОН СЫКТЫВКАРА вышел на охоту! Уничтожено поле «${room.board.tiles[tile].name}»${owner ? ` (было у ${nameOf(room, owner)})` : ''} — теперь здесь кратер`);
+  Object.assign(s.properties[tile], { owner: null, mortgaged: false, houses: 0 });
+}
+
 function tickCops(room: GameRoom): void {
   const s = room.state;
   if (s.phase === 'over') return;
@@ -1342,7 +1367,7 @@ function tickCops(room: GameRoom): void {
   }
   const cfg = copsCfg(room);
   if (Math.random() < cfg.chance) {
-    const tiles = shuffle(room.board.tiles.map((_, i) => i)).slice(0, cfg.tiles);
+    const tiles = shuffle(room.board.tiles.map((_, i) => i).filter((i) => !s.drone || s.drone.tile !== i)).slice(0, cfg.tiles);
     s.cops = { tiles, rollsLeft: cfg.rolls };
     log(
       s,

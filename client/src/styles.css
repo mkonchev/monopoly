@@ -724,6 +724,120 @@ button {
   background: #eaf5ea;
 }
 
+/* ---------- Дрон: кратер и анимация удара ---------- */
+
+.tile.destroyed {
+  background: radial-gradient(circle at 50% 42%, #333338 12%, #17171a 62%, #232327 100%);
+}
+
+.tile.destroyed .bar,
+.tile.destroyed .tprice {
+  display: none;
+}
+
+.tile.destroyed .tname {
+  color: #8a8a8a;
+  text-decoration: line-through;
+}
+
+.tile.destroyed .tprice {
+  visibility: hidden;
+}
+
+.crater-emoji {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(16px, 2.4vw, 34px);
+  z-index: 4;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
+}
+
+.tile.destroyed .tokens .token {
+  border-color: #555;
+}
+
+.drone-fly {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(28px, 4.2vw, 56px);
+  z-index: 30;
+  pointer-events: none;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.6));
+  animation: drone-fly 1.7s cubic-bezier(0.45, 0, 0.55, 1) forwards;
+}
+
+@keyframes drone-fly {
+  0% {
+    transform: translate(-46vw, -58vh) rotate(-18deg) scale(1.15);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  70% {
+    transform: translate(0, 0) rotate(10deg) scale(1);
+  }
+  82% {
+    transform: translate(8px, -6px) rotate(-8deg);
+  }
+  100% {
+    transform: translate(0, 0) rotate(0);
+    opacity: 1;
+  }
+}
+
+.drone-boom {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(36px, 5.5vw, 76px);
+  z-index: 31;
+  pointer-events: none;
+  opacity: 0;
+  animation: drone-boom 1s ease-out 1.7s forwards;
+}
+
+@keyframes drone-boom {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) rotate(0);
+  }
+  25% {
+    opacity: 1;
+    transform: scale(1.8) rotate(8deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.2) rotate(-4deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+.tile.drone-strike {
+  animation: strike-flash 0.8s ease-out 1.7s;
+}
+
+@keyframes strike-flash {
+  0% {
+    filter: brightness(4) saturate(0);
+  }
+  100% {
+    filter: brightness(1);
+  }
+}
+
 /* ---------- Событие «Сыковские менты» ---------- */
 
 .cops-banner {

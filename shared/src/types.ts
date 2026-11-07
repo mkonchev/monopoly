@@ -65,6 +65,7 @@ export interface BoardConfig {
     hotelsLimit: number | null;
     loans?: LoanRules;
     cops?: CopsRules;
+    drone?: DroneRules;
   };
   groups: Record<string, { name: string; color: string }>;
   tiles: Tile[];
@@ -133,6 +134,8 @@ export interface GameState {
   // Событие «Сыковские менты»: клетки с мигалками и остаток бросков
   cops: { tiles: number[]; rollsLeft: number } | null;
   copsFinePending: boolean; // игрок приехал на клетку — штраф спишется при завершении разрешения
+  // Событие «Дрон»: уничтоженное поле (0 или 1 раз за игру)
+  drone: { tile: number; seq: number } | null;
   // Казино (бывшая бесплатная стоянка): банк из всех штрафов и выплат банку
   casinoPot: number;
   lastCasinoRoll: { seq: number; player: string; roll: number; payout: number } | null;
@@ -164,6 +167,11 @@ export interface CopsRules {
   fine: number; // штраф за попадание на клетку с ментами
   rolls: number; // сколько бросков (всех игроков) патрулируют
   tiles: number; // сколько клеток с мигалками
+}
+
+// Случайное событие «Дрон»: раз за игру уничтожает случайное поле.
+export interface DroneRules {
+  chance: number; // шанс появления на каждом броске (0.02 = 2%)
 }
 
 export interface PublicPlayer {

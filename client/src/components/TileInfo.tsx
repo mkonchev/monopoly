@@ -5,6 +5,22 @@ import { fmtMoney } from '../fmt';
 export default function TileInfo({ idx, snap, onClose }: { idx: number; snap: RoomSnapshot; onClose: () => void }) {
   const tile = snap.board.tiles[idx];
   const ps = snap.state.properties[idx];
+
+  if (snap.state.drone?.tile === idx) {
+    return (
+      <div className="modal-overlay" onClick={onClose}>
+        <div className="tile-info-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="tile-info-bar" style={{ background: '#17171a' }} />
+          <h2 className="tile-info-title">🕳️ {tile.name}</h2>
+          <p className="tile-info-note">Поле уничтожено дроном Сыктывкара. Здесь больше ничего нет и ничего не действует.</p>
+          <button className="btn primary" onClick={onClose}>
+            Закрыть
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!ps || !('price' in tile)) return null;
   const cur = snap.board.meta.currency;
   const owner = ps.owner ? snap.players.find((p) => p.id === ps.owner) : null;

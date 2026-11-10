@@ -217,10 +217,9 @@ button {
 }
 
 .btn.secondary {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--ink);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.07);
+  color: #26241e;
+  border: 1px solid rgba(0, 0, 0, 0.18);
 }
 
 .btn.secondary:hover:not(:disabled) {
@@ -252,9 +251,9 @@ button {
 }
 
 .mini-btn {
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.07);
-  color: var(--ink);
+  border: 1px solid #cfc8b4;
+  background: #fffdf6;
+  color: #26241e;
   border-radius: 7px;
   padding: 2px 7px;
   cursor: pointer;
@@ -264,7 +263,7 @@ button {
 }
 
 .mini-btn:hover:not(:disabled) {
-  background: rgba(212, 175, 55, 0.18);
+  background: #fdf6dd;
   border-color: var(--gold-soft);
 }
 
@@ -329,20 +328,21 @@ button {
   gap: 14px;
   padding: 20px 28px;
   text-align: center;
-  background: rgba(10, 14, 10, 0.32);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  border: 1px solid rgba(212, 175, 55, 0.25);
+  background: linear-gradient(170deg, rgba(252, 250, 242, 0.93), rgba(240, 234, 219, 0.88));
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
+  border: 1px solid rgba(212, 175, 55, 0.45);
   border-radius: 18px;
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  color: #26241e;
   max-width: 88%;
 }
 
 .center-title {
   font-family: Georgia, 'Times New Roman', serif;
   letter-spacing: 0.12em;
-  color: var(--gold);
-  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.6), 0 0 30px rgba(212, 175, 55, 0.25);
+  color: #8a6d1f;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .room-badge {
@@ -364,8 +364,9 @@ button {
 
 .status {
   font-size: clamp(13px, 1.4vw, 17px);
-  font-weight: 600;
+  font-weight: 650;
   max-width: 90%;
+  color: #26241e;
 }
 
 .btn-row {
@@ -973,7 +974,7 @@ button {
 }
 
 .own-row:hover {
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(0, 0, 0, 0.05);
 }
 
 .own-name {
@@ -986,8 +987,7 @@ button {
 
 .own-name.full {
   font-weight: 800;
-  color: var(--gold);
-  text-shadow: 0 0 14px rgba(212, 175, 55, 0.35);
+  color: #8a6d1f;
 }
 
 .mini-house {
@@ -1200,7 +1200,7 @@ button {
 .cops-banner {
   background: #fdecea;
   border: 1.5px solid var(--danger);
-  color: var(--danger);
+  color: #8f1f16;
   border-radius: 8px;
   padding: 6px 12px;
   font-size: 13px;
@@ -1302,14 +1302,14 @@ button {
 }
 
 .panel {
-  background: linear-gradient(165deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.03));
-  backdrop-filter: blur(16px) saturate(1.2);
-  -webkit-backdrop-filter: blur(16px) saturate(1.2);
-  border: 1px solid var(--panel-border);
-  color: var(--ink);
+  background: linear-gradient(170deg, rgba(252, 250, 242, 0.94), rgba(240, 234, 219, 0.9));
+  backdrop-filter: blur(16px) saturate(1.15);
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  color: #26241e;
   border-radius: 16px;
   padding: 14px 16px;
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
 .panel h3 {
@@ -1317,7 +1317,7 @@ button {
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 2px;
-  color: var(--gold);
+  color: #8a6d1f;
 }
 
 .player-list {
@@ -1335,23 +1335,23 @@ button {
   gap: 8px;
   padding: 7px 9px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.055);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(0, 0, 0, 0.06);
   transition: background 0.2s, box-shadow 0.2s;
 }
 
 .player-row.turn {
-  outline: 1.5px solid var(--gold-soft);
-  background: rgba(212, 175, 55, 0.1);
-  box-shadow: 0 0 24px rgba(212, 175, 55, 0.12);
+  outline: 1.5px solid var(--gold);
+  background: #fdf6dd;
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.25);
 }
 
 .player-row.me {
-  background: rgba(96, 165, 250, 0.1);
+  background: #eef2fb;
 }
 
 .player-row.turn.me {
-  background: rgba(212, 175, 55, 0.12);
+  background: #fdf6dd;
 }
 
 .player-row.bankrupt {
@@ -1376,7 +1376,7 @@ button {
 .player-name {
   font-weight: 650;
   font-size: 14px;
-  color: var(--ink);
+  color: #26241e;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1384,7 +1384,7 @@ button {
 
 .player-sub {
   font-size: 11px;
-  color: var(--ink-muted);
+  color: #77705c;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1394,13 +1394,13 @@ button {
   text-align: right;
   font-size: 13px;
   font-weight: 750;
-  color: var(--gold);
+  color: #26241e;
   white-space: nowrap;
 }
 
 .player-worth {
   font-size: 10px;
-  color: var(--ink-muted);
+  color: #8a8272;
   font-weight: 400;
 }
 
@@ -1434,7 +1434,7 @@ button {
 }
 
 .prop-row.clickable:hover {
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(0, 0, 0, 0.05);
 }
 
 .prop-row:hover {
@@ -1482,7 +1482,7 @@ button {
   flex-direction: column;
   gap: 3px;
   min-height: 0;
-  color: #cfcabb;
+  color: #4a463a;
 }
 
 /* ---------- Модалка карточки ---------- */
@@ -1665,16 +1665,17 @@ button {
   font-size: 13px;
   padding: 8px;
   border-radius: 8px;
-  background: #f8f6ef;
+  background: rgba(0, 0, 0, 0.045);
 }
 
 .loan-block.due {
   background: #fdecea;
   outline: 2px solid var(--danger);
+  color: #26241e;
 }
 
 .due-warning {
-  color: var(--danger);
+  color: #8f1f16;
   font-weight: 700;
   font-size: 13px;
 }
@@ -1695,15 +1696,16 @@ button {
 }
 
 .offer-block.rescue {
-  background: #fff8e1;
+  background: #fff3c4;
   border-radius: 8px;
   padding: 8px;
+  color: #26241e;
 }
 
 .offer-title {
   font-size: 12px;
   font-weight: 700;
-  color: #666;
+  color: #8a6d1f;
 }
 
 .offer-row {
@@ -1712,7 +1714,7 @@ button {
   gap: 8px;
   justify-content: space-between;
   font-size: 12.5px;
-  background: #f6f6f6;
+  background: rgba(0, 0, 0, 0.045);
   border-radius: 8px;
   padding: 6px 8px;
 }

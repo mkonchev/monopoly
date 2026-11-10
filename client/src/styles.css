@@ -223,6 +223,7 @@ button {
 }
 
 .board {
+  position: relative;
   display: grid;
   /* Классическая доска: улицы 1 по краю × 1.5 вглубь, углы 1.5×1.5 */
   grid-template-rows: 1.5fr repeat(9, 1fr) 1.5fr;
@@ -400,35 +401,6 @@ button {
 .pip.on {
   visibility: visible;
   background: #222;
-}
-
-/* ---------- Слой фишек (ходьба по клеткам) ---------- */
-
-.tokens-layer {
-  position: absolute;
-  inset: 0;
-  z-index: 12;
-  pointer-events: none;
-}
-
-.token-piece {
-  position: absolute;
-  transform: translate(-50%, -72%);
-  transition: left 0.5s cubic-bezier(0.4, 0, 0.2, 1), top 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.token-piece .token {
-  animation: hop 0.5s ease;
-}
-
-@keyframes hop {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  45% {
-    transform: translateY(-12px);
-  }
 }
 
 /* ---------- Машина гаишников ---------- */

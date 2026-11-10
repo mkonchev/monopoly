@@ -84,7 +84,7 @@ describe('событие «Сыковские менты»', () => {
   it('появляется с шансом: 6 разных клеток и 10 бросков', () => {
     const room = makeRoom(2);
     room.players[0].position = 0;
-    rollCops(room, 0, 2, 3, 0.01); // 0.01 < 0.05 → событие
+    rollCops(room, 0, 2, 3, 0.01); // 0.01 < 0.025 → событие
     expect(room.state.cops).not.toBeNull();
     expect(room.state.cops!.tiles).toHaveLength(6);
     expect(new Set(room.state.cops!.tiles).size).toBe(6);

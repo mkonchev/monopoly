@@ -75,7 +75,7 @@ afterEach(() => vi.restoreAllMocks());
 describe('дрон', () => {
   it('срабатывает по шансу и уничтожает не-угловое поле', () => {
     const room = makeRoom(2);
-    rollDraws(room, 0, 2, 3, [0.9, 0.01]); // ментов нет, дрон летит
+    rollDraws(room, 0, 2, 3, [0.9, 0.005]); // ментов нет, дрон летит
     expect(room.state.drone).not.toBeNull();
     const { tile, seq } = room.state.drone!;
     expect(seq).toBe(1);
@@ -105,7 +105,7 @@ describe('дрон', () => {
     room.state.properties[idx]!.owner = 'p0';
     room.state.properties[idx]!.houses = 3;
     // candidates[2] — Тестовая улица; rest 0.07: floor(0.07 * 36) = 2
-    rollDraws(room, 0, 2, 3, [0.9, 0.01], 0.07);
+    rollDraws(room, 0, 2, 3, [0.9, 0.005], 0.07);
     expect(room.state.drone!.tile).toBe(idx);
     expect(room.state.properties[idx]!.owner).toBeNull();
     expect(room.state.properties[idx]!.houses).toBe(0);

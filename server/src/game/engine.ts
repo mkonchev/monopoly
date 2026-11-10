@@ -1331,7 +1331,7 @@ function requireNoAwaiting(room: GameRoom): void {
 function copsCfg(room: GameRoom): Required<NonNullable<BoardConfig['rules']['cops']>> {
   const raw = room.board.rules.cops ?? {};
   return {
-    chance: raw.chance ?? 0.05,
+    chance: raw.chance ?? 0.025,
     fine: raw.fine ?? 50000,
     rolls: raw.rolls ?? 10,
     tiles: raw.tiles ?? 6,
@@ -1343,7 +1343,7 @@ function copsCfg(room: GameRoom): Required<NonNullable<BoardConfig['rules']['cop
 function tickDrone(room: GameRoom): void {
   const s = room.state;
   if (s.phase === 'over' || s.drone) return;
-  const chance = room.board.rules.drone?.chance ?? 0.02;
+  const chance = room.board.rules.drone?.chance ?? 0.01;
   if (Math.random() >= chance) return;
   // углы не трогаем: СТАРТ, тюрьма, казино и «иди в тюрьму» — структурные
   const candidates = room.board.tiles.map((_, i) => i).filter((i) => i !== 0 && i !== 10 && i !== 20 && i !== 30);

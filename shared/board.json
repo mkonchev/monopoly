@@ -19,13 +19,13 @@
       "rescueSharePercent": 50
     },
     "cops": {
-      "chance": 0.05,
+      "chance": 0.025,
       "fine": 50000,
       "rolls": 10,
       "tiles": 6
     },
     "drone": {
-      "chance": 0.02
+      "chance": 0.01
     }
   },
   "groups": {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { GameAction, RoomSnapshot } from '../../../shared/src/types';
-import BoardScene from '../three/BoardScene';
+import Board from './Board';
 import CenterPanel from './CenterPanel';
 import Players from './Players';
 import MyProperties from './MyProperties';
@@ -20,31 +20,18 @@ interface Props {
 
 export default function Game({ snap, act, leave }: Props) {
   const [infoTile, setInfoTile] = useState<number | null>(null);
-  const [follow, setFollow] = useState(false);
   const pickMode = snap.state.phase === 'triplet' && snap.you === snap.state.turnPlayer;
   return (
     <div className="game">
       <div className="game-body">
         <AllProperties snap={snap} onSelectTile={setInfoTile} />
-        <div className="scene-wrap">
-          <BoardScene
-            snap={snap}
-            follow={follow}
-            onSelectTile={setInfoTile}
-            pickMode={pickMode}
-            onPickTile={(idx) => act({ type: 'tripletMove', tile: idx })}
-          />
-          <div className="scene-center">
-            <CenterPanel snap={snap} act={act} hideDice />
-          </div>
-          <button
-            className={'follow-btn' + (follow ? ' on' : '')}
-            title="Камера следует за твоей фигуркой"
-            onClick={() => setFollow((f) => !f)}
-          >
-            🎥 {follow ? 'Не следить' : 'Следить'}
-          </button>
-        </div>
+        <Board
+          snap={snap}
+          onSelectTile={setInfoTile}
+          onPickTile={pickMode ? (idx) => act({ type: 'tripletMove', tile: idx }) : undefined}
+        >
+          <CenterPanel snap={snap} act={act} />
+        </Board>
         <aside className="side">
           <div className="side-meta">
             <span className="room-badge">{snap.code}</span>

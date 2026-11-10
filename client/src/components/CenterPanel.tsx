@@ -1,7 +1,7 @@
 import type { GameAction, RoomSnapshot } from '../../../shared/src/types';
 import { fmtMoney } from '../fmt';
 
-export default function CenterPanel({ snap, act, hideDice }: { snap: RoomSnapshot; act: (a: GameAction) => void; hideDice?: boolean }) {
+export default function CenterPanel({ snap, act }: { snap: RoomSnapshot; act: (a: GameAction) => void }) {
   const { state, board, players } = snap;
   const me = players.find((p) => p.id === snap.you);
   const turn = players.find((p) => p.id === state.turnPlayer);
@@ -131,7 +131,7 @@ export default function CenterPanel({ snap, act, hideDice }: { snap: RoomSnapsho
   return (
     <div className="center-inner">
       <div className="center-title">{board.meta.title}</div>
-      {dice && !hideDice && (
+      {dice && (
         <div className="dice-row" key={state.rollId}>
           <Die value={dice[0]} />
           <Die value={dice[1]} />

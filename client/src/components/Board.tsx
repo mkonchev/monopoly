@@ -32,6 +32,9 @@ export default function Board({ snap, children, onSelectTile, onPickTile }: { sn
   }, [snap.state.cops]);
   return (
     <div className={'board' + (copsDrive ? ' cops-drive' : '')}>
+      <div className="board-center-felt">
+        <div className="board-logo">МОНОПОЛИЯ</div>
+      </div>
       {snap.board.tiles.map((tile, i) => (
         <Tile key={i} idx={i} snap={snap} onSelectTile={onSelectTile} onPickTile={onPickTile} droneAnim={droneAnim === i} />
       ))}

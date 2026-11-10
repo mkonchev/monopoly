@@ -17,8 +17,10 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, { cors: { origin: true, credentials: false } });
 
+const APP_VERSION = process.env.RENDER_GIT_COMMIT?.slice(0, 7) ?? 'dev';
+
 app.get('/healthz', (_req, res) => {
-  res.json({ ok: true, rooms: mgr.rooms.size });
+  res.json({ ok: true, rooms: mgr.rooms.size, version: APP_VERSION });
 });
 
 const clientDist = path.resolve(process.cwd(), 'client/dist');

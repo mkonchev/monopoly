@@ -179,7 +179,7 @@ button {
 }
 
 .hint {
-  color: var(--ink-muted);
+  color: #77705c;
   font-size: 13px;
 }
 
@@ -1416,7 +1416,7 @@ button {
   gap: 6px;
   font-size: 12px;
   font-weight: 700;
-  color: #666;
+  color: #8a6d1f;
   margin-bottom: 4px;
 }
 
@@ -1499,7 +1499,7 @@ button {
 
 .card-modal {
   background: linear-gradient(170deg, #fbf8ef, #efe9d8);
-  color: var(--ink);
+  color: #26241e;
   border-radius: 16px;
   padding: 24px;
   max-width: 430px;
@@ -1552,7 +1552,7 @@ button {
 }
 
 .card-drawer {
-  color: #777;
+  color: #8a8272;
   font-size: 13px;
   margin-bottom: 16px;
 }
@@ -1561,7 +1561,7 @@ button {
 
 .tile-info-modal {
   background: linear-gradient(170deg, #fbf8ef, #f1ecdc);
-  color: var(--ink);
+  color: #26241e;
   border-radius: 16px;
   padding: 0 22px 22px;
   max-width: 440px;
@@ -1628,7 +1628,7 @@ button {
 
 .tile-info-note {
   font-size: 12.5px;
-  color: #777;
+  color: #77705c;
   margin: 8px 0 0;
 }
 

@@ -664,7 +664,7 @@ function drawCard(room: GameRoom, p: Player, deckName: 'chance' | 'chest', depth
     room.discards[deckName] = [];
   }
   const card = room.decks[deckName].shift()!;
-  s.lastCard = { seq: ++s.cardSeq, deck: deckName, text: card.text, drawer: p.id };
+  s.lastCard = { seq: ++s.cardSeq, deck: deckName, text: card.text, drawer: p.id, image: card.image };
   log(s, `🎴 ${p.name} тянет карту «${deckName === 'chance' ? 'Шанс' : 'Казна'}»: ${card.text}`);
   applyCardEffect(room, p, card.effect, depth);
   if (card.effect.type !== 'getOutOfJail') room.discards[deckName].push(card);

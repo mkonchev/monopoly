@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="260">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#22344a"/>
+      <stop offset="1" stop-color="#101a26"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="260" rx="14" fill="url(#g)"/>
+  <rect x="10" y="10" width="380" height="240" rx="10" fill="none" stroke="#ffd54f" stroke-width="2"/>
+  <text x="200" y="100" font-size="60" text-anchor="middle">🚔</text>
+  <text x="200" y="150" font-size="22" font-weight="bold" text-anchor="middle" fill="#ffd54f" font-family="Arial">СЫКОВСКИЕ МЕНТЫ</text>
+  <text x="200" y="182" font-size="14" text-anchor="middle" fill="#9fb3c8" font-family="Arial">это картинка-заглушка — замени свою в client/public/cards</text>
+</svg>

@@ -59,6 +59,7 @@ export function validateBoard(b: BoardConfig): string[] {
     }
     deck.forEach((c, i) => {
       if (!c.text) add(`${key}[${i}]: отсутствует текст`);
+      if (c.image !== undefined && typeof c.image !== 'string') add(`${key}[${i}]: image должен быть строкой`);
       if (!c.effect || !isEffect(c.effect)) add(`${key}[${i}]: неизвестный или отсутствующий effect`);
       else {
         const e = c.effect as CardEffect;

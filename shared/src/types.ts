@@ -5,6 +5,7 @@
 export interface CardDef {
   text: string;
   effect: CardEffect;
+  image?: string; // картинка на карточке: локальный путь (cards/xxx.jpg) или http-ссылка
 }
 
 export type CardEffect =
@@ -207,6 +208,7 @@ export interface LastCard {
   deck: 'chance' | 'chest';
   text: string;
   drawer: string;
+  image?: string | null;
 }
 
 export interface DebtInfo {

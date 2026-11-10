@@ -685,10 +685,20 @@ button {
 .check-row.setting {
   text-align: left;
   font-size: 14px;
-  background: #f6f6f6;
-  border-radius: 8px;
-  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--ink);
+  border-radius: 10px;
+  padding: 9px 11px;
   cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.check-row.setting input {
+  margin-top: 3px;
+  accent-color: var(--gold);
 }
 
 .check-row.setting.disabled {
@@ -897,14 +907,15 @@ button {
 
 .tokens {
   position: absolute;
-  bottom: 1px;
-  left: 0;
-  right: 0;
+  inset: 0;
   display: flex;
+  align-items: center;
   justify-content: center;
-  gap: 1px;
+  gap: 2px;
   flex-wrap: wrap;
+  padding: 6px 2px 2px;
   pointer-events: none;
+  z-index: 10;
 }
 
 .token {

@@ -174,12 +174,29 @@ const PIPS: Record<number, number[]> = {
   6: [1, 3, 4, 6, 7, 9],
 };
 
+// Объёмный кубик: грани 1-6 в 3D, при броске кувыркается и ложится нужной гранью
 function Die({ value, speed }: { value: number; speed?: boolean }) {
+  const rot: Record<number, string> = {
+    1: 'rotateX(0deg) rotateY(0deg)',
+    2: 'rotateX(0deg) rotateY(-90deg)',
+    3: 'rotateX(-90deg) rotateY(0deg)',
+    4: 'rotateX(90deg) rotateY(0deg)',
+    5: 'rotateX(0deg) rotateY(90deg)',
+    6: 'rotateX(0deg) rotateY(180deg)',
+  };
   return (
-    <div className={speed ? 'die rolling speed' : 'die rolling'}>
-      {Array.from({ length: 9 }, (_, k) => (
-        <span key={k} className={PIPS[value]?.includes(k + 1) ? 'pip on' : 'pip'} />
-      ))}
+    <div className={'die3d-wrap' + (speed ? ' speed' : '')}>
+      <div className="die3d-tumble">
+        <div className="die3d-cube" style={{ transform: rot[value] ?? rot[1] }}>
+          {[1, 2, 3, 4, 5, 6].map((v) => (
+            <div key={v} className={'die3d-face f' + v}>
+              {Array.from({ length: 9 }, (_, k) => (
+                <span key={k} className={PIPS[v]?.includes(k + 1) ? 'pip on' : 'pip'} />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

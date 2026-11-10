@@ -1,15 +1,41 @@
+import { useRef, useState } from 'react';
 import type { RoomSnapshot } from '../../../shared/src/types';
 import { fmtMoney } from '../fmt';
 
+// 3D-наклон карточки за курсором + блик (общий для модалок-карточек)
+function useTilt() {
+  const tiltRef = useRef<HTMLDivElement>(null);
+  const [tilt, setTilt] = useState({ rx: 0, ry: 0, gx: 50, gy: 25 });
+  const onTiltMove = (e: React.MouseEvent) => {
+    const el = tiltRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const px = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+    const py = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
+    setTilt({ rx: -(py - 0.5) * 10, ry: (px - 0.5) * 16, gx: px * 100, gy: py * 100 });
+  };
+  const onTiltLeave = () => setTilt({ rx: 0, ry: 0, gx: 50, gy: 25 });
+  return { tiltRef, tilt, onTiltMove, onTiltLeave };
+}
+
 // Карточка поля по клику: рента по уровням застройки, дом, залог.
 export default function TileInfo({ idx, snap, onClose }: { idx: number; snap: RoomSnapshot; onClose: () => void }) {
+  const { tiltRef, tilt, onTiltMove, onTiltLeave } = useTilt();
   const tile = snap.board.tiles[idx];
   const ps = snap.state.properties[idx];
 
   if (snap.state.drone?.tile === idx) {
     return (
       <div className="modal-overlay" onClick={onClose}>
-        <div className="tile-info-modal" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="tile-info-modal card-tilt"
+          ref={tiltRef}
+          onMouseMove={onTiltMove}
+          onMouseLeave={onTiltLeave}
+          onClick={(e) => e.stopPropagation()}
+          style={{ transform: `perspective(900px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)` }}
+        >
+          <div className="card-glare" style={{ background: `radial-gradient(circle at ${tilt.gx}% ${tilt.gy}%, rgba(255,255,255,0.4), rgba(255,255,255,0) 55%)` }} />
           <div className="tile-info-bar" style={{ background: '#17171a' }} />
           <h2 className="tile-info-title">🕳️ {tile.name}</h2>
           <p className="tile-info-note">Поле уничтожено дроном Сыктывкара. Здесь больше ничего нет и ничего не действует.</p>
@@ -67,7 +93,15 @@ export default function TileInfo({ idx, snap, onClose }: { idx: number; snap: Ro
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="tile-info-modal" onClick={(e) => e.stopPropagation()}>
+      <div
+          className="tile-info-modal card-tilt"
+          ref={tiltRef}
+          onMouseMove={onTiltMove}
+          onMouseLeave={onTiltLeave}
+          onClick={(e) => e.stopPropagation()}
+          style={{ transform: `perspective(900px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)` }}
+        >
+          <div className="card-glare" style={{ background: `radial-gradient(circle at ${tilt.gx}% ${tilt.gy}%, rgba(255,255,255,0.4), rgba(255,255,255,0) 55%)` }} />
         <div className="tile-info-bar" style={{ background: group?.color ?? '#8a8f98' }} />
         <h2 className="tile-info-title">
           {group && <span className="dot" style={{ background: group.color }} />}

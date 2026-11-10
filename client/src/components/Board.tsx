@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { RoomSnapshot } from '../../../shared/src/types';
 import { figureEmoji } from '../../../shared/src/tokens';
-import { CORNER_EMOJI, gridPos, sideOf } from '../boardLayout';
+import { CORNER_EMOJI, gridPos, sideOf, tileCenter } from '../boardLayout';
 import { fmtCompact, fmtMoney } from '../fmt';
 
 export default function Board({ snap, children, onSelectTile, onPickTile }: { snap: RoomSnapshot; children?: ReactNode; onSelectTile?: (idx: number) => void; onPickTile?: (idx: number) => void }) {
@@ -17,12 +17,51 @@ export default function Board({ snap, children, onSelectTile, onPickTile }: { sn
       return () => clearTimeout(t);
     }
   }, [snap.state.drone]);
+  // машина гаишников: при появлении события проезжает через доску с мигалками
+  const [copsDrive, setCopsDrive] = useState(false);
+  const copsPrev = useRef(false);
+  useEffect(() => {
+    const active = !!snap.state.cops;
+    if (active && !copsPrev.current) {
+      setCopsDrive(true);
+      const t = setTimeout(() => setCopsDrive(false), 2400);
+      copsPrev.current = true;
+      return () => clearTimeout(t);
+    }
+    copsPrev.current = active;
+  }, [snap.state.cops]);
   return (
-    <div className="board">
+    <div className={'board' + (copsDrive ? ' cops-drive' : '')}>
       {snap.board.tiles.map((tile, i) => (
         <Tile key={i} idx={i} snap={snap} onSelectTile={onSelectTile} onPickTile={onPickTile} droneAnim={droneAnim === i} />
       ))}
+      <TokensLayer snap={snap} />
+      {copsDrive && (
+        <div className="cops-car">
+          <span className="cops-car-body">🚔</span>
+          <span className="cops-light l1" />
+          <span className="cops-light l2" />
+        </div>
+      )}
       <div className="board-center">{children}</div>
+    </div>
+  );
+}
+
+// Фишки игроков поверх доски: плавно «шагают» на новую клетку с подпрыгиванием
+function TokensLayer({ snap }: { snap: RoomSnapshot }) {
+  return (
+    <div className="tokens-layer">
+      {snap.players.filter((p) => !p.bankrupt).map((p) => {
+        const c = tileCenter(p.position);
+        return (
+          <div key={p.id} className="token-piece" style={{ left: c.x + '%', top: c.y + '%' }}>
+            <span key={p.position} className="token" style={{ background: p.color }} title={p.name}>
+              {figureEmoji(p.figure)}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -34,7 +73,6 @@ function Tile({ idx, snap, onSelectTile, onPickTile, droneAnim }: { idx: number;
   const owner = ps?.owner ? snap.players.find((p) => p.id === ps.owner) : null;
   const group = tile.type === 'street' ? snap.board.groups[tile.group] : null;
   const pos = gridPos(idx);
-  const tokens = snap.players.filter((p) => p.position === idx && !p.bankrupt);
 
   const price = 'price' in tile ? tile.price : 0;
   const houses = ps?.houses ?? 0;
@@ -109,15 +147,6 @@ function Tile({ idx, snap, onSelectTile, onPickTile, droneAnim }: { idx: number;
       {crater && <span className="crater-emoji">🕳️</span>}
       {droneAnim && <span className="drone-fly">🛸</span>}
       {droneAnim && <span className="drone-boom">💥</span>}
-      {tokens.length > 0 && (
-        <div className="tokens">
-          {tokens.map((t) => (
-            <span key={t.id} className="token" style={{ background: t.color }} title={t.name}>
-              {figureEmoji(t.figure)}
-            </span>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

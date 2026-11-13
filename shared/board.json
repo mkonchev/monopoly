@@ -26,6 +26,10 @@
     },
     "drone": {
       "chance": 0.01
+    },
+    "auction": {
+      "startFactor": 0.5,
+      "step": 10000
     }
   },
   "groups": {

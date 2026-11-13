@@ -79,11 +79,14 @@ describe('покупка и рента', () => {
     expect(room.state.phase).toBe('manage');
   });
 
-  it('отказ от покупки оставляет поле банку', () => {
+  it('отказ от покупки запускает аукцион; все пасанули — поле остаётся банку', () => {
     const room = makeRoom(2);
     room.players[0].position = 0;
     roll(room, 0, 1, 2);
     act(room, 0, { type: 'decline' });
+    expect(room.state.phase).toBe('auction');
+    act(room, 1, { type: 'auctionPass' });
+    act(room, 0, { type: 'auctionPass' });
     expect(room.state.properties[tileIdx(room, 'Нагатинская улица')].owner).toBeNull();
     expect(room.state.phase).toBe('manage');
   });
@@ -177,6 +180,8 @@ describe('дубли и тюрьма', () => {
     roll(room, 0, 1, 2); // 6+3=9 Рязанский проспект
     expect(room.state.phase).toBe('buy');
     act(room, 0, { type: 'decline' });
+    act(room, 1, { type: 'auctionPass' });
+    act(room, 0, { type: 'auctionPass' });
     expect(room.state.phase).toBe('manage');
   });
 
@@ -203,6 +208,8 @@ describe('дубли и тюрьма', () => {
     expect(p.position).toBe(18);
     expect(room.state.phase).toBe('buy'); // предложение купить: доп. броска нет
     act(room, 0, { type: 'decline' });
+    act(room, 1, { type: 'auctionPass' });
+    act(room, 0, { type: 'auctionPass' });
     expect(room.state.phase).toBe('manage');
   });
 
@@ -432,7 +439,12 @@ describe('ход игры', () => {
     // попадание на Шанс допустимо; закончим ход в любой фазе результата
     const phase = room.state.phase;
     expect(phase === 'manage' || phase === 'buy' || phase === 'roll').toBe(true);
-    if (phase === 'buy') act(room, 0, { type: 'decline' });
+    if (phase === 'buy') {
+      act(room, 0, { type: 'decline' });
+      // аукцион: пасуем в порядке торгов, чтобы завершить разрешение клетки
+      const order = [...room.state.auction!.order];
+      for (const id of order) act(room, room.players.findIndex((pl) => pl.id === id), { type: 'auctionPass' });
+    }
     act(room, 0, { type: 'endTurn' });
     expect(room.state.turnPlayer).toBe('p1');
     expect(room.state.phase).toBe('roll');

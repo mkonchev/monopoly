@@ -136,7 +136,7 @@ export default function Deals({ snap, act }: Props) {
               <span>
                 🤲 К {nameOf(r.to)}: просите {fmtMoney(r.amount, cur)}
               </span>
-              <button className="mini-btn" disabled={!(aw?.id === r.id && aw.from === me.id)} onClick={() => act({ type: 'cancelOffer', kind: 'loan', id: r.id })}>
+              <button className="mini-btn" onClick={() => act({ type: 'cancelOffer', kind: 'loan', id: r.id })}>
                 Отменить
               </button>
             </div>
@@ -148,7 +148,7 @@ export default function Deals({ snap, act }: Props) {
                 {t.giveMoney > 0 && ` + ${fmtMoney(t.giveMoney, cur)}`} ↔ {describeTiles(snap, t.wantTiles)}
                 {t.wantMoney > 0 && ` + ${fmtMoney(t.wantMoney, cur)}`}
               </span>
-              <button className="mini-btn" disabled={!(aw?.id === t.id && aw.from === me.id)} onClick={() => act({ type: 'cancelOffer', kind: 'trade', id: t.id })}>
+              <button className="mini-btn" onClick={() => act({ type: 'cancelOffer', kind: 'trade', id: t.id })}>
                 Отменить
               </button>
             </div>
@@ -331,7 +331,7 @@ function TradeModal({ snap, act, onClose }: { snap: RoomSnapshot; act: (a: GameA
   const tradeable = (ownerId: string) =>
     snap.board.tiles
       .map((t, i) => ({ t, i, ps: snap.state.properties[i] }))
-      .filter(({ t, ps }) => ps.owner === ownerId && (t.type !== 'street' || ps.houses === 0));
+      .filter(({ ps }) => ps.owner === ownerId);
 
   const mine = tradeable(me.id);
   const theirs = tradeable(to);
@@ -349,6 +349,9 @@ function TradeModal({ snap, act, onClose }: { snap: RoomSnapshot; act: (a: GameA
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="tile-info-modal trade-modal" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-x" title="Закрыть" onClick={onClose}>
+          ✕
+        </button>
         <div className="tile-info-bar" style={{ background: '#1e88e5' }} />
         <h2 className="tile-info-title">🔄 Обмен с {target?.name ?? '…'}</h2>
         <label className="field">
@@ -369,10 +372,12 @@ function TradeModal({ snap, act, onClose }: { snap: RoomSnapshot; act: (a: GameA
             <h3 className="tile-info-heading">Вы отдаёте</h3>
             <div className="checkbox-list">
               {mine.length === 0 && <div className="hint">Нечего отдавать</div>}
-              {mine.map(({ t, i }) => (
+              {mine.map(({ t, i, ps }) => (
                 <label key={i} className="check-row">
                   <input type="checkbox" checked={giveTiles.has(i)} onChange={() => toggle(giveTiles, i, setGiveTiles)} />
                   {t.name}
+                  {ps.houses === 5 ? ' 🏨' : ps.houses > 0 ? ` 🏠×${ps.houses}` : ''}
+                  {ps.mortgaged ? ' 🏦' : ''}
                 </label>
               ))}
             </div>
@@ -385,10 +390,12 @@ function TradeModal({ snap, act, onClose }: { snap: RoomSnapshot; act: (a: GameA
             <h3 className="tile-info-heading">Вы получаете</h3>
             <div className="checkbox-list">
               {theirs.length === 0 && <div className="hint">У игрока нечего взять</div>}
-              {theirs.map(({ t, i }) => (
+              {theirs.map(({ t, i, ps }) => (
                 <label key={i} className="check-row">
                   <input type="checkbox" checked={wantTiles.has(i)} onChange={() => toggle(wantTiles, i, setWantTiles)} />
                   {t.name}
+                  {ps.houses === 5 ? ' 🏨' : ps.houses > 0 ? ` 🏠×${ps.houses}` : ''}
+                  {ps.mortgaged ? ' 🏦' : ''}
                 </label>
               ))}
             </div>
@@ -398,7 +405,7 @@ function TradeModal({ snap, act, onClose }: { snap: RoomSnapshot; act: (a: GameA
             </label>
           </div>
         </div>
-        <p className="tile-info-note">Улицы с домами обмену не подлежат — сначала продайте постройки. Заложенные поля передаются с залогом.</p>
+        <p className="tile-info-note">Улицы передаются вместе с домами, заложенные поля — с залогом (его придётся выкупать).</p>
         <div className="btn-row">
           <button className="btn primary" disabled={!canSend} onClick={() => { act({ type: 'proposeTrade', to, giveTiles: [...giveTiles], giveMoney, wantTiles: [...wantTiles], wantMoney }); onClose(); }}>
             Предложить

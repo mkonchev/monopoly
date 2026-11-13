@@ -122,7 +122,9 @@ describe('событие «Сыковские менты»', () => {
     rollCops(room, 0, 1, 2, 0.9); // позиция 3 — Тестовая улица свободна
     expect(room.state.phase).toBe('buy');
     expect(room.players[0].money).toBe(board.rules.startMoney); // штраф ещё не списан
-    act(room, 0, { type: 'decline' });
+    act(room, 0, { type: 'decline' }); // аукцион: штраф ждёт завершения разрешения
+    act(room, 1, { type: 'auctionPass' });
+    act(room, 0, { type: 'auctionPass' });
     expect(room.players[0].money).toBe(board.rules.startMoney - 50000);
     expect(room.state.phase).toBe('manage');
   });

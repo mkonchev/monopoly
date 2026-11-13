@@ -20,6 +20,7 @@ const stats = {
   casinoVisits: 0, casinoWins: 0, casinoMisses: 0,
   bankLoans: 0, playerLoans: 0, loanRepays: 0, loanExtends: 0, loanDefaults: 0,
   tradesProposed: 0, tradesAccepted: 0, tradesDeclined: 0,
+  auctionBids: 0, auctionPasses: 0, auctionsWon: 0,
   debts: 0, payDebts: 0, bankruptcies: 0, goSalaries: 0,
   violations: [], potMax: 0,
 };
@@ -49,6 +50,8 @@ function countLog(prevSeq, snap, patterns) {
     if (t.includes('полностью гасит кредит')) stats.loanRepays++;
     if (t.includes('продлевает кредит')) stats.loanExtends++;
     if (t.includes('совершили обмен')) stats.tradesAccepted++;
+    if (t.includes('выигрывает аукцион')) stats.auctionsWon++;
+    if (t.includes('Аукцион не состоялся')) stats.auctionsUnsold = (stats.auctionsUnsold || 0) + 1;
     if (t.includes('ждём ответа')) { /* предложение создано */ }
     if (t.includes('проходит СТАРТ')) stats.goSalaries++;
     if (t.includes('обанкротился')) stats.bankruptcies++;
@@ -198,6 +201,29 @@ while (guard++ < MAX_ACTIONS) {
     }
   }
 
+  // аукцион: очередь определяется порядком торгов, а не turnPlayer
+  if (st.phase === 'auction' && st.auction) {
+    const a = st.auction;
+    const bidderIdx = s.players.findIndex((p) => p.id === a.order[a.turn]);
+    if (bidderIdx < 0 || s.players[bidderIdx].bankrupt) { await sleep(30); continue; }
+    const money = s.players[bidderIdx].money;
+    const step = s.board.rules.auction?.step ?? 10000;
+    const price = s.board.tiles[a.tile].price ?? 0;
+    const opening = Math.floor((price * 0.5) / 1000) * 1000;
+    const minBid = a.leader === null ? opening : a.bid + step;
+    const worth = price * (a.leader === null ? 0.7 : 1.05); // не полезем выше разумной цены
+    if (money >= minBid && minBid <= worth && Math.random() < 0.6) {
+      const r = await act(bidderIdx, { type: 'auctionBid', amount: minBid });
+      if (r.ok) stats.auctionBids++;
+      else check(false, `auctionBid отклонён: ${r.error}`);
+    } else {
+      const r = await act(bidderIdx, { type: 'auctionPass' });
+      if (r.ok) stats.auctionPasses++;
+      else check(false, `auctionPass отклонён: ${r.error}`);
+    }
+    continue;
+  }
+
   const cur = s.players.find((p) => p.id === st.turnPlayer);
   if (!cur || cur.bankrupt) { await sleep(30); continue; }
   const idx = s.players.findIndex((p) => p.id === cur.id);
@@ -307,14 +333,14 @@ while (guard++ < MAX_ACTIONS) {
           }
         }
       }
-      // случайный обмен-разведка
+      // случайный обмен-разведка (улицы с домами теперь тоже можно)
       if (Math.random() < 0.03) {
-        const mine = myTiles(s, cur.id).filter((x) => x.t.type !== 'street' || x.ps.houses === 0);
+        const mine = myTiles(s, cur.id);
         const others = s.players.filter((p) => !p.bankrupt && p.id !== cur.id);
-        const partner = others.find((p) => myTiles(s, p.id).some((x) => x.t.type !== 'street' || x.ps.houses === 0));
+        const partner = others.find((p) => myTiles(s, p.id).length > 0);
         if (mine.length && partner) {
           const give = pick(mine);
-          const theirs = myTiles(s, partner.id).filter((x) => x.t.type !== 'street' || x.ps.houses === 0);
+          const theirs = myTiles(s, partner.id);
           const want = pick(theirs);
           const r = await act(idx, {
             type: 'proposeTrade', to: partner.id,

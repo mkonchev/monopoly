@@ -1752,6 +1752,43 @@ button {
 
 .trade-modal {
   max-width: 560px;
+  position: relative;
+}
+
+.modal-x {
+  position: absolute;
+  top: 14px;
+  right: 12px;
+  z-index: 2;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.08);
+  color: #26241e;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.modal-x:hover {
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.auction-row {
+  align-items: stretch;
+}
+
+.auction-input {
+  width: 120px;
+  padding: 8px 10px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 700;
+  color: #26241e;
+  background: rgba(255, 255, 255, 0.6);
 }
 
 .trade-cols {

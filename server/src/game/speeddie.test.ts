@@ -179,6 +179,8 @@ describe('Мистер Монополия', () => {
     expect(p.money).toBe(board.rules.startMoney - 8000);
     expect(room.state.phase).toBe('buy'); // предложение купить площадь
     act(room, 0, { type: 'decline' });
+    act(room, 1, { type: 'auctionPass' });
+    act(room, 0, { type: 'auctionPass' });
     expect(room.state.phase).toBe('manage'); // дублей не было
   });
 

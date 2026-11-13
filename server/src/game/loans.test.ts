@@ -390,14 +390,20 @@ describe('обмен собственностью', () => {
     expect(room.state.offers.trades).toHaveLength(0);
   });
 
-  it('нельзя предлагать улицы с домами', () => {
+  it('улица с домами предлагается: дома переезжают вместе с полем', () => {
     const room = makeRoom(2);
     const a = tileIdx(room, 'Тестовая улица');
     const b = tileIdx(room, 'Тестовая площадь');
     room.state.properties[a]!.owner = 'p0';
     room.state.properties[a]!.houses = 2;
     room.state.properties[b]!.owner = 'p1';
-    expect(() => act(room, 0, { type: 'proposeTrade', to: 'p1', giveTiles: [a], giveMoney: 0, wantTiles: [b], wantMoney: 0 })).toThrow(GameError);
+    room.state.turnPlayer = 'p0';
+    room.state.phase = 'manage';
+    act(room, 0, { type: 'proposeTrade', to: 'p1', giveTiles: [a], giveMoney: 0, wantTiles: [b], wantMoney: 0 });
+    act(room, 1, { type: 'acceptTrade', id: room.state.offers.trades[0].id });
+    expect(room.state.properties[a]!.owner).toBe('p1');
+    expect(room.state.properties[a]!.houses).toBe(2);
+    expect(room.state.properties[b]!.owner).toBe('p0');
   });
 
   it('принятие отклоняется, если обстоятельства изменились', () => {

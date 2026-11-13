@@ -184,6 +184,7 @@ export function createLobbyState(): GameState {
     bank: { houses: null, hotels: null },
     offers: { trades: [], loanRequests: [] },
     awaitingOffer: null,
+    auction: null,
     cops: null,
     copsFinePending: false,
     drone: null,
@@ -216,6 +217,7 @@ export function startGame(room: GameRoom): void {
     bank: { houses: b.rules.housesLimit, hotels: b.rules.hotelsLimit },
     offers: { trades: [], loanRequests: [] },
     awaitingOffer: null,
+    auction: null,
     cops: null,
     copsFinePending: false,
     drone: null,
@@ -323,6 +325,76 @@ function finishResolution(room: GameRoom): void {
     return;
   }
   s.phase = s.pendingExtraRoll ? 'roll' : 'manage';
+}
+
+// ---------- Аукцион ----------
+
+function auctionCfg(room: GameRoom): Required<NonNullable<BoardConfig['rules']['auction']>> {
+  const raw = room.board.rules.auction ?? {};
+  return { startFactor: raw.startFactor ?? 0.5, step: raw.step ?? 10000 };
+}
+
+// Стартовая ставка аукциона: доля цены поля, округлённая вниз до 1000.
+function auctionOpening(room: GameRoom): number {
+  const tile = tileOf(room, room.state.auction!.tile);
+  const price = 'price' in tile ? tile.price : 0;
+  return Math.max(1000, Math.floor((price * auctionCfg(room).startFactor) / 1000) * 1000);
+}
+
+// Отказ от покупки → аукцион среди всех живых игроков (отказник участвует последним).
+// Если торговать некому (меньше двух живых) — поле просто остаётся у банка.
+function startAuctionOrSkip(room: GameRoom, decliner: Player): void {
+  const s = room.state;
+  const alive = room.players.filter((x) => !x.bankrupt);
+  if (alive.length < 2) {
+    s.phase = 'manage';
+    finishResolution(room);
+    return;
+  }
+  const di = alive.findIndex((x) => x.id === decliner.id);
+  const order: string[] = [];
+  for (let k = 1; k <= alive.length; k++) order.push(alive[(di + k) % alive.length].id);
+  s.auction = { tile: decliner.position, bid: 0, leader: null, order, turn: 0, passed: [] };
+  s.phase = 'auction';
+  const first = room.players.find((x) => x.id === order[0])!;
+  log(s, `🔨 Аукцион: «${tileOf(room, decliner.position).name}» — старт ${fmtMoney(room, auctionOpening(room))}, первым объявляет ${first.name}`);
+}
+
+// Вызывается после каждой ставки/паса: передвигает указатель и завершает торги.
+function advanceAuction(room: GameRoom): void {
+  const s = room.state;
+  const a = s.auction!;
+  const active = a.order.filter((id) => !a.passed.includes(id));
+  if (a.leader !== null && active.length === 1) {
+    endAuction(room, a.leader);
+    return;
+  }
+  if (active.length === 0) {
+    endAuction(room, null);
+    return;
+  }
+  let t = a.turn;
+  do {
+    t = (t + 1) % a.order.length;
+  } while (a.passed.includes(a.order[t]));
+  a.turn = t;
+}
+
+function endAuction(room: GameRoom, winnerId: string | null): void {
+  const s = room.state;
+  const a = s.auction!;
+  const tile = tileOf(room, a.tile);
+  s.auction = null;
+  s.phase = 'manage';
+  if (winnerId) {
+    const w = room.players.find((x) => x.id === winnerId)!;
+    w.money -= a.bid;
+    s.properties[a.tile]!.owner = winnerId;
+    log(s, `🔨 ${w.name} выигрывает аукцион — «${tile.name}» за ${fmtMoney(room, a.bid)}`);
+  } else {
+    log(s, `🔨 Аукцион не состоялся — «${tile.name}» остаётся у банка`);
+  }
+  finishResolution(room);
 }
 
 function sendToJail(room: GameRoom, p: Player): void {
@@ -918,8 +990,32 @@ export function applyAction(room: GameRoom, p: Player, action: GameAction): void
       if (!isCurrent(room, p)) throw new GameError('Сейчас не ваш ход');
       if (s.phase !== 'buy') throw new GameError('Нет предложения о покупке');
       log(s, `${p.name} отказывается от покупки «${tileOf(room, p.position).name}»`);
-      s.phase = 'manage';
-      finishResolution(room);
+      startAuctionOrSkip(room, p);
+      return;
+    }
+    case 'auctionBid': {
+      requireActivePlayer(room, p);
+      if (s.phase !== 'auction' || !s.auction) throw new GameError('Аукцион не идёт');
+      const a = s.auction;
+      if (a.order[a.turn] !== p.id) throw new GameError('Сейчас не ваша ставка');
+      const amount = Math.floor(action.amount);
+      const min = a.leader === null ? auctionOpening(room) : a.bid + auctionCfg(room).step;
+      if (amount < min) throw new GameError(`Минимальная ставка — ${fmtMoney(room, min)}`);
+      if (amount > p.money) throw new GameError('Не хватает денег на такую ставку');
+      a.bid = amount;
+      a.leader = p.id;
+      log(s, `🔨 ${p.name} ставит ${fmtMoney(room, amount)}`);
+      advanceAuction(room);
+      return;
+    }
+    case 'auctionPass': {
+      requireActivePlayer(room, p);
+      if (s.phase !== 'auction' || !s.auction) throw new GameError('Аукцион не идёт');
+      const a = s.auction;
+      if (a.order[a.turn] !== p.id) throw new GameError('Сейчас не ваш торг');
+      a.passed.push(p.id);
+      log(s, `🔨 ${p.name} пасует`);
+      advanceAuction(room);
       return;
     }
     case 'endTurn': {
@@ -1154,12 +1250,10 @@ export function applyAction(room: GameRoom, p: Player, action: GameAction): void
       for (const idx of giveTiles) {
         const ps = s.properties[idx];
         if (!ps || ps.owner !== p.id) throw new GameError(`Поле «${tileOf(room, idx)?.name ?? 'неизвестное'}» — не ваше`);
-        if (!canBeTraded(room, idx)) throw new GameError(`«${tileOf(room, idx)?.name ?? 'неизвестное'}»: сначала продайте дома`);
       }
       for (const idx of wantTiles) {
         const ps = s.properties[idx];
         if (!ps || ps.owner !== target.id) throw new GameError(`Поле «${tileOf(room, idx)?.name ?? 'неизвестное'}» — не у ${target.name}`);
-        if (!canBeTraded(room, idx)) throw new GameError(`«${tileOf(room, idx)?.name ?? 'неизвестное'}»: у ${target.name} там дома`);
       }
       if (giveTiles.length + giveMoney === 0 || wantTiles.length + wantMoney === 0) {
         throw new GameError('Обмен должен быть чем-то интересен обеим сторонам');
@@ -1189,11 +1283,9 @@ export function applyAction(room: GameRoom, p: Player, action: GameAction): void
       // Перепроверка актуальности: всё могло измениться с момента предложения.
       for (const idx of offer.giveTiles) {
         if (s.properties[idx]?.owner !== giver.id) throw new GameError('Автор уже не владеет частью предлагаемого');
-        if (!canBeTraded(room, idx)) throw new GameError('На предлагаемом поле появились дома');
       }
       for (const idx of offer.wantTiles) {
         if (s.properties[idx]?.owner !== p.id) throw new GameError('Вы уже не владеете частью запрашиваемого');
-        if (!canBeTraded(room, idx)) throw new GameError('На вашем поле появились дома');
       }
       if (giver.money < offer.giveMoney) throw new GameError('У автора не хватает денег');
       if (p.money < offer.wantMoney) throw new GameError('У вас не хватает денег для этого обмена');
@@ -1376,15 +1468,7 @@ function tickCops(room: GameRoom): void {
   }
 }
 
-// Обмен: улицы без построек; вокзалы/предприятия — всегда.
-function canBeTraded(room: GameRoom, idx: number): boolean {
-  const tile = tileOf(room, idx);
-  const ps = propsOf(room, idx);
-  if (!ps || !ps.owner) return false;
-  if (tile.type === 'street' && ps.houses > 0) return false;
-  return true;
-}
-
+// Обмен: любые поля владельца — улицы передаются вместе с домами, заложенные — с залогом.
 function requireOwnership(room: GameRoom, p: Player, idx: number): { tile: Tile; ps: PropertyState } {
   const tile = tileOf(room, idx);
   const ps = propsOf(room, idx);

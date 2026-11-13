@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { GameAction, RoomSnapshot } from '../../../shared/src/types';
 import { fmtMoney } from '../fmt';
 
@@ -29,6 +30,24 @@ export default function CenterPanel({ snap, act }: { snap: RoomSnapshot; act: (a
           🔄 Играть снова
         </button>
       );
+    }
+  } else if (state.phase === 'auction' && state.auction) {
+    const a = state.auction;
+    const tile = board.tiles[a.tile];
+    const step = board.rules.auction?.step ?? 10000;
+    const opening = Math.max(1000, Math.floor(('price' in tile ? tile.price : 0) * (board.rules.auction?.startFactor ?? 0.5) / 1000) * 1000);
+    const minBid = a.leader === null ? opening : a.bid + step;
+    const acting = players.find((p) => p.id === a.order[a.turn]);
+    const iPassed = !!me && a.passed.includes(me.id);
+    const meActing = !!me && a.order[a.turn] === me.id && !iPassed;
+    status =
+      a.leader === null
+        ? `🔨 Аукцион: «${tile.name}» — старт с ${fmtMoney(opening, cur)}`
+        : `🔨 Аукцион: «${tile.name}» — ставка ${fmtMoney(a.bid, cur)} (${players.find((p) => p.id === a.leader)?.name ?? '—'})`;
+    if (meActing) {
+      controls = <AuctionControls act={act} minBid={minBid} money={me!.money} cur={cur} />;
+    } else {
+      status += iPassed ? ' · вы пасанули' : ` · объявляет: ${acting?.name ?? '—'}`;
     }
   } else if (isMyTurn && state.phase === 'bus' && state.dice) {
     const [d1, d2] = state.dice;
@@ -120,9 +139,11 @@ export default function CenterPanel({ snap, act }: { snap: RoomSnapshot; act: (a
           ? ' — выбирает клетку для триплета'
           : state.phase === 'casino'
             ? ' — играет в казино'
-            : state.phase === 'buy' || state.phase === 'debt'
-              ? ' — принимает решение…'
-              : '';
+            : state.phase === 'auction'
+              ? ' — ждём окончания торгов'
+              : state.phase === 'buy' || state.phase === 'debt'
+                ? ' — принимает решение…'
+                : '';
     status = `Ход: ${turn.name}${turn.inJail ? ' (в тюрьме)' : ''}${waiting}`;
   } else {
     status = 'Ожидание…';
@@ -165,8 +186,33 @@ export default function CenterPanel({ snap, act }: { snap: RoomSnapshot; act: (a
   );
 }
 
-const PIPS: Record<number, number[]> = {
-  1: [5],
+// Панель торгов: своя очередь — ввод суммы (по умолчанию минимум) + пас
+function AuctionControls({ act, minBid, money, cur }: { act: (a: GameAction) => void; minBid: number; money: number; cur: string }) {
+  const [amount, setAmount] = useState<number | null>(null);
+  const value = amount ?? minBid;
+  const canBid = value >= minBid && value <= money;
+  return (
+    <div className="btn-row auction-row">
+      <input
+        className="auction-input"
+        type="number"
+        min={minBid}
+        step={1000}
+        value={value}
+        onChange={(e) => setAmount(Math.max(0, Number(e.target.value) || 0))}
+        title={`Минимум ${fmtMoney(minBid, cur)}, у вас ${fmtMoney(money, cur)}`}
+      />
+      <button className="btn primary" disabled={!canBid} onClick={() => act({ type: 'auctionBid', amount: value })}>
+        🔨 Поставить {fmtMoney(value, cur)}
+      </button>
+      <button className="btn secondary" onClick={() => act({ type: 'auctionPass' })}>
+        Пас
+      </button>
+    </div>
+  );
+}
+
+const PIPS: Record<number, number[]> = {  1: [5],
   2: [1, 9],
   3: [1, 5, 9],
   4: [1, 3, 7, 9],

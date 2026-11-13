@@ -56,6 +56,11 @@ export interface SimpleTile {
 
 export type Tile = StreetTile | RailroadTile | UtilityTile | TaxTile | SimpleTile;
 
+export interface AuctionRules {
+  startFactor: number; // стартовая ставка — доля цены поля (0.5 = половина)
+  step: number; // минимальный шаг повышения
+}
+
 export interface BoardConfig {
   meta: { title: string; currency: string };
   rules: {
@@ -67,6 +72,7 @@ export interface BoardConfig {
     loans?: LoanRules;
     cops?: CopsRules;
     drone?: DroneRules;
+    auction?: AuctionRules;
   };
   groups: Record<string, { name: string; color: string }>;
   tiles: Tile[];
@@ -114,6 +120,16 @@ export interface LoanRequest {
   amount: number;
 }
 
+// Аукцион после отказа от покупки: торги по кругу, старт с доли цены поля.
+export interface AuctionState {
+  tile: number;
+  bid: number; // текущая ставка (0 — ещё никто не ставил)
+  leader: string | null; // кто держит текущую ставку
+  order: string[]; // порядок торгов (начиная со следующего за отказником)
+  turn: number; // индекс в order — кто объявляет ставку сейчас
+  passed: string[]; // кто уже пасанул
+}
+
 export interface GameState {
   phase: Phase;
   turnPlayer: string | null;
@@ -132,6 +148,7 @@ export interface GameState {
   bank: { houses: number | null; hotels: number | null };
   offers: { trades: TradeOffer[]; loanRequests: LoanRequest[] };
   awaitingOffer: AwaitingOffer | null;
+  auction: AuctionState | null; // идущие торги (фаза 'auction')
   // Событие «Сыковские менты»: клетки с мигалками и остаток бросков
   cops: { tiles: number[]; rollsLeft: number } | null;
   copsFinePending: boolean; // игрок приехал на клетку — штраф спишется при завершении разрешения
@@ -149,7 +166,7 @@ export interface GameState {
 
 // ---------- Состояние игры (то, что видит клиент) ----------
 
-export type Phase = 'lobby' | 'roll' | 'buy' | 'debt' | 'manage' | 'over' | 'bus' | 'triplet' | 'casino';
+export type Phase = 'lobby' | 'roll' | 'buy' | 'debt' | 'manage' | 'over' | 'bus' | 'triplet' | 'casino' | 'auction';
 
 // Грань скоростного кубика (быстрый режим).
 export type SpeedFace = '1' | '2' | '3' | 'bus' | 'm1';
@@ -265,4 +282,6 @@ export type GameAction =
   // фигурка
   | { type: 'setFigure'; figure: string }
   // казино
-  | { type: 'casinoBet'; numbers: number[] };
+  | { type: 'casinoBet'; numbers: number[] }
+  | { type: 'auctionBid'; amount: number }
+  | { type: 'auctionPass' };
